@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --weave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .19 0 0 0 0 .16 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+html {
+  font-size: 15px;
+}
+body {
+  @apply bg-linen-100 text-ink-900 font-body antialiased;
+  background-image: var(--weave);
+}
+
+::selection {
+  background: #33507a;
+  color: #fbf9f4;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cfc6b2;
+  border-radius: 8px;
+  border: 2px solid #f6f2e9;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .card {
+    @apply bg-cotton rounded-xl shadow-card border border-linen-200/70;
+  }
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lift hover:-translate-y-0.5;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-[13.5px] font-medium
+      transition-all duration-200 cursor-pointer select-none whitespace-nowrap
+      disabled:opacity-40 disabled:cursor-not-allowed active:scale-[.98];
+  }
+  .btn-primary {
+    @apply btn bg-indigo-600 text-linen-50 hover:bg-indigo-700 shadow-card;
+  }
+  .btn-clay {
+    @apply btn bg-clay-400 text-white hover:bg-clay-500 shadow-card;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-700 hover:bg-linen-200/80 border border-linen-300;
+  }
+  .btn-light {
+    @apply btn bg-linen-200/90 text-ink-700 hover:bg-linen-300;
+  }
+  .input {
+    @apply rounded-lg border border-linen-300 bg-cotton px-3 py-2 text-[13.5px] text-ink-900
+      placeholder:text-ink-300 outline-none transition
+      focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full border border-linen-300 bg-cotton px-2.5 py-0.5
+      text-xs text-ink-500 cursor-pointer transition select-none;
+  }
+  .chip-on {
+    @apply border-indigo-600 bg-indigo-600 text-linen-50;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium;
+  }
+  .th {
+    @apply px-4 py-2.5 text-left text-xs font-semibold text-ink-400 tracking-wide;
+  }
+  .td {
+    @apply px-4 py-3 text-[13.5px] text-ink-700;
+  }
+  .h-panel {
+    @apply font-display text-lg font-bold text-ink-900;
+  }
+  .label {
+    @apply text-xs font-medium text-ink-400 mb-1 block;
+  }
+}
+
+/* 织纹分隔线 */
+.weave-divider {
+  height: 6px;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    #ded4bc 0 3px,
+    transparent 3px 6px,
+    #cbbfa4 6px 9px,
+    transparent 9px 12px
+  );
+  opacity: 0.4;
+  border-radius: 3px;
+}
+
+/* 页面进入动画 */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.rise-1 { animation-delay: 0.05s; }
+.rise-2 { animation-delay: 0.12s; }
+.rise-3 { animation-delay: 0.19s; }
+.rise-4 { animation-delay: 0.26s; }
+
+@keyframes fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fadein { animation: fadein 0.3s ease both; }
+
+@keyframes popup {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.popup { animation: popup 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* 面料图占位（程序化织纹由 JS 生成 data-uri，这里是兜底底色） */
+.swatch {
+  @apply relative overflow-hidden bg-linen-200;
+}
+
+/* 打印：电子册导出 */
+@media print {
+  body {
+    background: #fff;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-page {
+    page-break-after: always;
+  }
+}

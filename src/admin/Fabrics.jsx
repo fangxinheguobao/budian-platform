@@ -1,0 +1,172 @@
+import React, { useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { LayoutGrid, List, Plus } from 'lucide-react'
+import { useDB } from '../store/db'
+import { PageHead, FabricCard, Modal, Field, Empty } from '../components/kit'
+import FabricFilters, { applyFilters, countByDims } from '../components/FabricFilters'
+import { CATEGORY_PREFIX, TAGS } from '../data/seed'
+import { fabricImg } from '../lib/visual'
+
+const EMPTY_SEL = { category: [], style: [], scene: [], perf: [], stock: [], color: [] }
+
+export default function Fabrics() {
+  const { db, upsertFabric } = useDB()
+  const nav = useNavigate()
+  const [sel, setSel] = useState(EMPTY_SEL)
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState('default')
+  const [view, setView] = useState('grid')
+  const [showNew, setShowNew] = useState(false)
+
+  const counts = useMemo(() => countByDims(db.fabrics), [db.fabrics])
+  const list = useMemo(() => {
+    let arr = applyFilters(db.fabrics, sel)
+    if (q.trim()) {
+      const kw = q.trim().toLowerCase()
+      arr = arr.filter((f) => (f.name + f.sku + (f.story || '')).toLowerCase().includes(kw))
+    }
+    if (sort === 'price-asc') arr = [...arr].sort((a, b) => a.price - b.price)
+    if (sort === 'price-desc') arr = [...arr].sort((a, b) => b.price - a.price)
+    if (sort === 'views') arr = [...arr].sort((a, b) => b.views - a.views)
+    if (sort === 'stock') arr = [...arr].sort((a, b) => a.stock / a.safety - b.stock / b.safety)
+    return arr
+  }, [db.fabrics, sel, q, sort])
+
+  const filtered = sel.category.length + sel.style.length + sel.scene.length + sel.perf.length + sel.stock.length + sel.color.length > 0 || q.trim()
+
+  return (
+    <div>
+      <PageHead title="面料库" desc={`面料数字资产中心 · 共 ${db.fabrics.length} 款`}>
+        <button className="btn-primary" onClick={() => setShowNew(true)}><Plus size={15} /> 新建面料</button>
+      </PageHead>
+
+      <div className="flex gap-5 items-start">
+        <aside className="card p-5 w-[240px] shrink-0 sticky top-[74px] max-h-[calc(100vh-96px)] overflow-auto rise-1">
+          <FabricFilters sel={sel} setSel={setSel} counts={counts} />
+        </aside>
+
+        <div className="flex-1 min-w-0 rise-2">
+          <div className="flex items-center gap-2.5 mb-4">
+            <input
+              className="input flex-1"
+              placeholder="搜索面料 SKU、名称、产品故事…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            <select className="input !w-auto" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="default">默认排序</option>
+              <option value="views">按浏览量</option>
+              <option value="price-asc">价格从低到高</option>
+              <option value="price-desc">价格从高到低</option>
+              <option value="stock">库存紧急优先</option>
+            </select>
+            <div className="flex rounded-lg border border-linen-300 overflow-hidden">
+              <button className={`px-2.5 py-2 ${view === 'grid' ? 'bg-indigo-600 text-white' : 'bg-cotton text-ink-400 hover:bg-linen-200'}`} onClick={() => setView('grid')}><LayoutGrid size={15} /></button>
+              <button className={`px-2.5 py-2 ${view === 'list' ? 'bg-indigo-600 text-white' : 'bg-cotton text-ink-400 hover:bg-linen-200'}`} onClick={() => setView('list')}><List size={15} /></button>
+            </div>
+          </div>
+
+          <div className="text-xs text-ink-400 mb-3">
+            {filtered ? <>筛选出 <b className="text-ink-700">{list.length}</b> 款面料</> : <>共 {list.length} 款面料</>}
+          </div>
+
+          {!list.length ? (
+            <div className="card"><Empty text="没有匹配的面料，试试调整筛选条件" /></div>
+          ) : view === 'grid' ? (
+            <div className="grid grid-cols-3 xl:grid-cols-4 gap-4">
+              {list.map((f) => (
+                <FabricCard key={f.sku} f={f} to={`/admin/fabrics/${f.sku}`} />
+              ))}
+            </div>
+          ) : (
+            <div className="card divide-y divide-linen-200">
+              {list.map((f) => (
+                <Link key={f.sku} to={`/admin/fabrics/${f.sku}`} className="flex items-center gap-4 p-3.5 hover:bg-linen-100/70 transition">
+                  <img src={fabricImg(f)} alt={f.name} className="w-14 h-14 rounded-lg object-cover swatch" />
+                  <div className="w-[240px] min-w-0">
+                    <div className="text-[13.5px] font-medium truncate">{f.name}</div>
+                    <div className="text-[11px] text-ink-300 font-mono">{f.sku} · {f.category}</div>
+                  </div>
+                  <div className="text-[12.5px] text-ink-500 w-32">{f.gsm}gsm · {f.width}cm</div>
+                  <div className="text-[12.5px] w-20">¥{f.price}/米</div>
+                  <div className="text-[12.5px] text-ink-500 w-20">库存 {f.stock}m</div>
+                  <div className="flex-1 flex gap-1 justify-end">
+                    {f.styles.slice(0, 3).map((t) => <span key={t} className="badge bg-linen-200/80 text-ink-500">{t}</span>)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <NewFabricModal open={showNew} onClose={() => setShowNew(false)} onCreate={(f) => { upsertFabric(f); nav(`/admin/fabrics/${f.sku}`) }} />
+    </div>
+  )
+}
+
+function NewFabricModal({ open, onClose, onCreate }) {
+  const { db } = useDB()
+  const [form, setForm] = useState({ sku: '', name: '', category: '窗帘布', price: '', gsm: '', width: 148, stock: '', safety: 150 })
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+  const submit = () => {
+    if (!form.sku.trim() || !form.name.trim()) return
+    onCreate({
+      sku: form.sku.trim().toUpperCase(),
+      name: form.name.trim(),
+      category: form.category,
+      sub: '新品',
+      price: Number(form.price) || 0,
+      gsm: Number(form.gsm) || 200,
+      width: Number(form.width) || 148,
+      stock: Number(form.stock) || 0,
+      safety: Number(form.safety) || 150,
+      colorFam: '大地系',
+      colors: [],
+      styles: ['现代简约'],
+      scenes: form.category === '服装面料' ? ['服装'] : ['客厅'],
+      perf: [],
+      img: null,
+      hue: Math.floor(Math.random() * 360),
+      sat: 15,
+      views: 0,
+      story: '（新产品，产品故事待补充）',
+      craft: { process: '待补充', fastness: '—', shrinkage: '—', strength: '—', eco: '—' },
+    })
+    onClose()
+  }
+  return (
+    <Modal open={open} onClose={onClose} title="新建面料">
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="SKU 编号（唯一）">
+          <input className="input" placeholder={`如 ${CATEGORY_PREFIX[form.category]}-031`} value={form.sku} onChange={set('sku')} />
+        </Field>
+        <Field label="面料名称">
+          <input className="input" placeholder="如 轻奢绒面窗帘" value={form.name} onChange={set('name')} />
+        </Field>
+        <Field label="品类">
+          <select className="input" value={form.category} onChange={set('category')}>{TAGS.category.map((c) => <option key={c}>{c}</option>)}</select>
+        </Field>
+        <Field label="价格（元/米）">
+          <input className="input" type="number" value={form.price} onChange={set('price')} />
+        </Field>
+        <Field label="克重 gsm">
+          <input className="input" type="number" value={form.gsm} onChange={set('gsm')} />
+        </Field>
+        <Field label="门幅 cm">
+          <input className="input" type="number" value={form.width} onChange={set('width')} />
+        </Field>
+        <Field label="初始库存（米）">
+          <input className="input" type="number" value={form.stock} onChange={set('stock')} />
+        </Field>
+        <Field label="安全库存线（米）">
+          <input className="input" type="number" value={form.safety} onChange={set('safety')} />
+        </Field>
+      </div>
+      <div className="flex justify-end gap-2 mt-5">
+        <button className="btn-ghost" onClick={onClose}>取消</button>
+        <button className="btn-primary" disabled={!form.sku.trim() || !form.name.trim()} onClick={submit}>创建面料档案</button>
+      </div>
+    </Modal>
+  )
+}
