@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
+import { fabricStatus, useDB } from '../store/db'
+import { useAuth } from '../auth'
 import { fabricImg, fmtMoney } from '../lib/visual'
-import { fabricStatus } from '../store/db'
 
 export function PageHead({ title, desc, children }) {
   return (
@@ -105,5 +106,54 @@ export function Field({ label, children }) {
       <label className="label">{label}</label>
       {children}
     </div>
+  )
+}
+
+// 询价弹窗（US-3.3.2：摒弃购物车，主动询价触发高意向线索推送；需求选填降低门槛）
+export function AskModal({ open, onClose, sku, tier, customer }) {
+  const { db, addLead, addTrack } = useDB()
+  const { session } = useAuth()
+  const [qty, setQty] = useState(30)
+  const [note, setNote] = useState('')
+  const [done, setDone] = useState(false)
+  const f = db.fabrics.find((x) => x.sku === sku)
+  React.useEffect(() => { if (open) { setQty(30); setNote(''); setDone(false) } }, [open, sku])
+  if (!open || !f) return null
+  const cu = customer || db.customers.find((c) => c.id === session?.customerId)
+  const submit = () => {
+    addLead({ customerId: cu?.id || session?.customerId, sku, qty, note, source: '详情页询价', owner: cu?.sales })
+    if (session) addTrack(sku, '询价', session)
+    setDone(true)
+  }
+  return (
+    <Modal open={open} onClose={onClose} title={`询价 · ${f.name}`} width={480}>
+      {done ? (
+        <div className="text-center py-6">
+          <div className="w-14 h-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-2xl">✓</div>
+          <h3 className="font-display font-bold text-[17px] mt-4">询价已提交</h3>
+          <p className="text-[13px] text-ink-400 mt-2 leading-relaxed">高意向线索已实时推送至业务员（{cu?.sales || '待分配'}），<br />将与您联系并提供正式报价。</p>
+          <button className="btn-primary mt-5" onClick={onClose}>好的</button>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-3 rounded-lg bg-linen-100 p-3 mb-4">
+            <img src={fabricImg(f)} alt="" className="w-12 h-12 rounded-lg object-cover" />
+            <div className="text-[12.5px]">
+              <div className="font-medium">{f.name}</div>
+              <div className="text-ink-300 font-mono text-[11px]">{f.sku} · {f.category}</div>
+            </div>
+          </div>
+          <Field label="意向数量（米）">
+            <input className="input w-full" type="number" min="1" value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
+          </Field>
+          <Field label="需求说明（选填：文字或图片）">
+            <textarea className="input w-full mt-1" rows="3" placeholder="如：酒店项目用，需防火检测报告，含税含运费" value={note} onChange={(e) => setNote(e.target.value)} />
+          </Field>
+          <button className="btn-ghost w-full mt-2 !py-2" onClick={() => window.alert('演示环境：图片上传在正式版中支持（需求可配图）')}>＋ 添加图片</button>
+          <button className="btn-primary w-full mt-4 !py-2.5" onClick={submit}>提交询价（触发线索推送）</button>
+          <p className="text-[10.5px] text-ink-300 mt-2 text-center">摒弃购物车模式：仅在主动询价时推送线索，浏览不触发</p>
+        </>
+      )}
+    </Modal>
   )
 }

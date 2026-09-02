@@ -1,33 +1,38 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Check, Scissors, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Scissors, MessageSquareText, Share2, ShoppingBag, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react'
 import { useDB, priceFor } from '../store/db'
-import { useBasket } from '../basket'
+import { useAuth } from '../auth'
 import { fabricImg, weaveSwatch, fmtMoney } from '../lib/visual'
-import { IMG, TIER_MAP } from '../data/seed'
+import { TIER_MAP } from '../data/seed'
+import { AskModal } from '../components/kit'
 
 export default function FabricDetail() {
   const { sku } = useParams()
   const nav = useNavigate()
-  const { db, trackView } = useDB()
-  const basket = useBasket()
+  const { db, trackView, addTrack, addProof } = useDB()
+  const { user, can, session } = useAuth()
   const [shot, setShot] = useState(0)
   const [askOpen, setAskOpen] = useState(false)
-  const [sampleQty, setSampleQty] = useState(10)
-  const [added, setAdded] = useState(false)
+  const [proofOpen, setProofOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [proofQty, setProofQty] = useState(10)
+  const [proofNote, setProofNote] = useState('')
+  const [copied, setCopied] = useState(false)
 
   const f = db.fabrics.find((x) => x.sku === sku)
-  const me = db.customers.find((c) => c.id === basket?.myId)
+  const myCustomer = db.customers.find((c) => c.id === user?.customerId)
+  const tier = myCustomer?.tier
 
   useEffect(() => {
     setShot(0)
-    if (f) trackView(f.sku)
+    if (f) { trackView(f.sku); if (session) addTrack(f.sku, '浏览', session) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sku])
 
   const gallery = useMemo(() => {
     if (!f) return []
-    const scenes = ['scene-curtain-sofa', 'scene-living-room', 'scene-gray-curtain', 'scene-lounge', 'scene-showroom', 'scene-beige-curtain']
+    const scenes = ['scene-curtain-sofa', 'scene-living-room', 'scene-gray-curtain', 'scene-beige-curtain']
     const seedNum = f.sku.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0)
     const g = [{ type: '主图', src: f.img || weaveSwatch(f.sku, f.hue ?? 220, f.sat ?? 12) }]
     for (let i = 0; i < 3; i++) {
@@ -52,8 +57,16 @@ export default function FabricDetail() {
 
   if (!f) return <div className="max-w-[1280px] mx-auto px-6 py-16 text-center text-ink-300">面料不存在</div>
 
-  const price = priceFor(f, me?.tier)
-  const inBasket = basket?.basket.some((b) => b.sku === f.sku)
+  const showStock = can('stock')
+  const price = priceFor(f, tier)
+  const shareUrl = `${location.origin}${location.pathname}#/shop/fabrics/${f.sku}`
+
+  const submitProof = () => {
+    addProof({ customerId: user?.customerId || myCustomer?.id, items: [{ sku: f.sku, qty: proofQty }], note: proofNote })
+    addTrack(f.sku, '打样', session)
+    setProofOpen(false)
+    nav('/shop/proofs')
+  }
 
   return (
     <div className="max-w-[1280px] mx-auto px-6 py-6">
@@ -66,10 +79,8 @@ export default function FabricDetail() {
               <img key={shot} src={gallery[shot]?.src} alt={gallery[shot]?.type} className="w-full h-full object-cover fadein" />
               <div className="absolute bottom-3 left-3 badge bg-ink-900/65 text-linen-50">{gallery[shot]?.type}</div>
               {gallery.length > 1 && <>
-                <button className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-cotton/90 shadow-card flex items-center justify-center"
-                  onClick={() => setShot((shot - 1 + gallery.length) % gallery.length)}><ChevronLeft size={16} /></button>
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-cotton/90 shadow-card flex items-center justify-center"
-                  onClick={() => setShot((shot + 1) % gallery.length)}><ChevronRight size={16} /></button>
+                <button className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-cotton/90 shadow-card flex items-center justify-center" onClick={() => setShot((shot - 1 + gallery.length) % gallery.length)}><ChevronLeft size={16} /></button>
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-cotton/90 shadow-card flex items-center justify-center" onClick={() => setShot((shot + 1) % gallery.length)}><ChevronRight size={16} /></button>
               </>}
             </div>
             <div className="p-3 grid grid-cols-4 gap-2">
@@ -88,12 +99,32 @@ export default function FabricDetail() {
             <div className="text-xs text-ink-300 font-mono">{f.sku} · {f.category}{f.sub ? ` / ${f.sub}` : ''}</div>
             <h1 className="font-display text-[26px] font-bold mt-1">{f.name}</h1>
             <div className="flex items-baseline gap-2 mt-3">
-              <span className="font-display font-bold text-clay-500 text-[28px]">{fmtMoney(price)}</span>
-              <span className="text-sm text-ink-400">/ 米</span>
-              {me && <span className="badge bg-clay-100 text-clay-600">{TIER_MAP[me.tier]?.priceTier}</span>}
+              {tier ? (
+                <>
+                  <span className="font-display font-bold text-clay-500 text-[28px]">{fmtMoney(price)}</span>
+                  <span className="text-sm text-ink-400">/ 米</span>
+                  <span className="badge bg-clay-100 text-clay-600">{TIER_MAP[tier]?.priceTier}</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-display font-bold text-ink-500 text-[22px]">询价获取报价</span>
+                  <span className="badge bg-linen-200 text-ink-400">注册客户请联系业务员升级获取专属价</span>
+                </>
+              )}
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mt-5">
+            {showStock ? (
+              <div className="mt-4 rounded-lg bg-linen-100 px-4 py-2.5 text-[12.5px] text-ink-500 flex items-center justify-between">
+                <span>当前库存：<b className="text-ink-700">{f.stock} 米</b>（安全线 {f.safety} 米）</span>
+                {f.clearance && <span className="badge bg-ink-900 text-linen-50">清仓特价</span>}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-lg bg-linen-100 px-4 py-2.5 text-[12.5px] text-ink-400 flex items-center gap-2">
+                <span>库存与现货数据对非授权角色隐藏（商业机密保护，US-3.3.3）</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-3 mt-4">
               {[['克重', `${f.gsm} gsm`], ['门幅', `${f.width} cm`], ['可选颜色', `${f.colors.length} 色`]].map(([k, v]) => (
                 <div key={k} className="rounded-lg bg-linen-100 px-3.5 py-2.5">
                   <div className="text-[10.5px] text-ink-400">{k}</div>
@@ -116,20 +147,19 @@ export default function FabricDetail() {
 
             <p className="text-[13.5px] leading-[1.9] text-ink-600 mt-5">{f.story}</p>
 
-            <div className="flex gap-2.5 mt-6">
-              <button className={`flex-1 ${inBasket ? 'btn bg-indigo-50 text-indigo-600 border border-indigo-200' : 'btn-primary'}`}
-                onClick={() => basket?.add(f.sku)}>
-                {inBasket ? <><Check size={15} /> 已在询价篮</> : <><Plus size={15} /> 加入询价篮</>}
+            <div className="grid grid-cols-2 gap-2.5 mt-6">
+              <button className="btn-primary" onClick={() => setAskOpen(true)}><MessageSquareText size={15} /> 询价（触发线索推送）</button>
+              <button className="btn-clay" onClick={() => setProofOpen(true)}><Scissors size={15} /> 申请打样</button>
+              <button className="btn-ghost" onClick={() => setShareOpen(true)}><Share2 size={15} /> 分享给客户</button>
+              <button className="btn bg-linen-200 text-ink-300 cursor-not-allowed border border-linen-300" onClick={() => window.alert('交易功能一期搁置，仅保留下单入口；正式版将开放在线下单。')}>
+                <ShoppingBag size={15} /> 在线下单（二期开放）
               </button>
-              <button className="btn-clay flex-1" onClick={() => setAskOpen(true)}><Scissors size={15} /> 申请样品</button>
-              <button className="btn-ghost" onClick={() => setAskOpen(true)}><MessageCircle size={15} /> 咨询</button>
             </div>
-            <div className="text-[11.5px] text-ink-300 mt-3">提交后布典人生团队将在 10 分钟内与您联系 · 样品寄送免费</div>
+            <div className="text-[11.5px] text-ink-300 mt-3">询价后线索将实时推送至您的专属业务员 · 打样单直连ERP双向同步进度</div>
           </div>
         </div>
       </div>
 
-      {/* 相似推荐 */}
       {similar.length > 0 && (
         <section className="mt-10">
           <h2 className="font-display text-[20px] font-bold mb-4">相似推荐</h2>
@@ -141,7 +171,7 @@ export default function FabricDetail() {
                 </div>
                 <div className="p-3.5">
                   <div className="font-medium text-[14px] truncate">{x.name}</div>
-                  <div className="text-xs text-ink-400 mt-0.5">{fmtMoney(priceFor(x, me?.tier))}/米 · {x.styles.join(' · ')}</div>
+                  <div className="text-xs text-ink-400 mt-0.5">{tier ? `${fmtMoney(priceFor(x, tier))}/米` : '询价'} · {x.styles.join(' · ')}</div>
                 </div>
               </Link>
             ))}
@@ -149,25 +179,38 @@ export default function FabricDetail() {
         </section>
       )}
 
-      {/* 申请样品弹层 */}
-      {askOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center fadein" style={{ background: 'rgba(34,38,45,.42)' }} onClick={() => setAskOpen(false)}>
-          <div className="card popup p-6 w-[440px]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-display font-bold text-[17px]">申请样品 · {f.name}</h3>
-            <p className="text-xs text-ink-400 mt-1">我们将按您的档位价格核算并安排寄样（演示环境：提交后进入管理端「客户选样」队列）</p>
-            <div className="flex items-center gap-3 mt-5">
-              <span className="text-[13px] text-ink-500">样布数量（米）</span>
-              <input className="input !w-24" type="number" min="1" value={sampleQty} onChange={(e) => setSampleQty(Math.max(1, Number(e.target.value) || 1))} />
-              <span className="text-[13px] text-ink-400">× {fmtMoney(price)}/米</span>
+      <AskModal open={askOpen} onClose={() => setAskOpen(false)} sku={f.sku} tier={tier} />
+
+      {proofOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center fadein" style={{ background: 'rgba(34,38,45,.42)' }} onClick={() => setProofOpen(false)}>
+          <div className="card popup p-6 w-[460px]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display font-bold text-[17px]">打样单下达 · {f.name}</h3>
+            <p className="text-xs text-ink-400 mt-1">打样为需求工单（非交易订单），提交后经平台推送ERP，进度反向回传可实时跟踪（US-3.3.4）。</p>
+            <div className="flex items-center gap-3 mt-4">
+              <span className="text-[13px] text-ink-500 shrink-0">打样数量（米）</span>
+              <input className="input !w-24" type="number" min="1" value={proofQty} onChange={(e) => setProofQty(Math.max(1, Number(e.target.value) || 1))} />
             </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button className="btn-ghost" onClick={() => setAskOpen(false)}>取消</button>
-              <button className="btn-primary" onClick={() => {
-                basket?.addRequest?.(f.sku, sampleQty)
-                setAskOpen(false)
-                nav('/shop/my-samples')
-              }}>提交申请</button>
+            <textarea className="input w-full mt-3" rows="2" placeholder="打样需求说明（款式/规格/用途，选填）" value={proofNote} onChange={(e) => setProofNote(e.target.value)} />
+            <div className="flex justify-end gap-2 mt-5">
+              <button className="btn-ghost" onClick={() => setProofOpen(false)}>取消</button>
+              <button className="btn-primary" onClick={submitProof}>提交打样单</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {shareOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center fadein" style={{ background: 'rgba(34,38,45,.42)' }} onClick={() => setShareOpen(false)}>
+          <div className="card popup p-6 w-[480px]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display font-bold text-[17px]">分享产品</h3>
+            <p className="text-xs text-ink-400 mt-1 leading-relaxed">分享链接可作为拉新入口：新用户需<b>注册留资</b>后方可查看内容，层层裂变扩充客户池（US-3.3.3）。</p>
+            <div className="flex gap-2 mt-4">
+              <input className="input flex-1 font-mono !text-xs" readOnly value={shareUrl} onFocus={(e) => e.target.select()} />
+              <button className="btn-primary shrink-0" onClick={() => { navigator.clipboard?.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>
+                {copied ? <><Check size={13} /> 已复制</> : <><Copy size={13} /> 复制</>}
+              </button>
+            </div>
+            <div className="text-[11px] text-ink-300 mt-3">对方打开链接 → 引导注册 → 注册登录后查看产品详情，系统自动记录其IP大区与浏览轨迹。</div>
           </div>
         </div>
       )}

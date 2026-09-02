@@ -1,11 +1,12 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LayoutGrid, List, Plus } from 'lucide-react'
+import { LayoutGrid, List, Plus, ScanSearch, X } from 'lucide-react'
 import { useDB } from '../store/db'
 import { PageHead, FabricCard, Modal, Field, Empty } from '../components/kit'
 import FabricFilters, { applyFilters, countByDims } from '../components/FabricFilters'
 import { CATEGORY_PREFIX, TAGS } from '../data/seed'
 import { fabricImg } from '../lib/visual'
+import { extractImageFeature, fabricFeature, imageDistance } from '../lib/ai'
 
 const EMPTY_SEL = { category: [], style: [], scene: [], perf: [], stock: [], color: [] }
 
@@ -17,6 +18,9 @@ export default function Fabrics() {
   const [sort, setSort] = useState('default')
   const [view, setView] = useState('grid')
   const [showNew, setShowNew] = useState(false)
+  const [imgSearch, setImgSearch] = useState(null) // {url, order: Map(sku->rank)}
+  const [imgBusy, setImgBusy] = useState(false)
+  const fileRef = useRef(null)
 
   const counts = useMemo(() => countByDims(db.fabrics), [db.fabrics])
   const list = useMemo(() => {
@@ -25,12 +29,26 @@ export default function Fabrics() {
       const kw = q.trim().toLowerCase()
       arr = arr.filter((f) => (f.name + f.sku + (f.story || '')).toLowerCase().includes(kw))
     }
-    if (sort === 'price-asc') arr = [...arr].sort((a, b) => a.price - b.price)
-    if (sort === 'price-desc') arr = [...arr].sort((a, b) => b.price - a.price)
-    if (sort === 'views') arr = [...arr].sort((a, b) => b.views - a.views)
-    if (sort === 'stock') arr = [...arr].sort((a, b) => a.stock / a.safety - b.stock / b.safety)
+    if (imgSearch) {
+      arr = [...arr].sort((a, b) => (imgSearch.order.get(a.sku) ?? 999) - (imgSearch.order.get(b.sku) ?? 999))
+    } else if (sort === 'sales') arr = [...arr].sort((a, b) => (a.salesRank || 99) - (b.salesRank || 99))
+    else if (sort === 'price-asc') arr = [...arr].sort((a, b) => a.price - b.price)
+    else if (sort === 'price-desc') arr = [...arr].sort((a, b) => b.price - a.price)
+    else if (sort === 'views') arr = [...arr].sort((a, b) => b.views - a.views)
+    else if (sort === 'stock') arr = [...arr].sort((a, b) => a.stock / a.safety - b.stock / b.safety)
     return arr
-  }, [db.fabrics, sel, q, sort])
+  }, [db.fabrics, sel, q, sort, imgSearch])
+
+  const doScanSearch = async (file) => {
+    setImgBusy(true)
+    try {
+      const feat = await extractImageFeature(file)
+      const withFeat = await Promise.all(db.fabrics.map(async (f) => ({ sku: f.sku, d: imageDistance(feat, await fabricFeature(f)) })))
+      const order = new Map(withFeat.sort((a, b) => a.d - b.d).map((x, i) => [x.sku, i]))
+      setImgSearch({ url: URL.createObjectURL(file), order })
+      setSort('default')
+    } finally { setImgBusy(false) }
+  }
 
   const filtered = sel.category.length + sel.style.length + sel.scene.length + sel.perf.length + sel.stock.length + sel.color.length > 0 || q.trim()
 
@@ -53,8 +71,13 @@ export default function Fabrics() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) doScanSearch(f); e.target.value = '' }} />
+            <button className={`btn ${imgSearch ? 'bg-indigo-600 text-white' : 'btn-ghost'}`} disabled={imgBusy} onClick={() => fileRef.current?.click()}>
+              <ScanSearch size={15} /> {imgBusy ? '识别中…' : '以图搜图'}
+            </button>
             <select className="input !w-auto" value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="default">默认排序</option>
+              <option value="sales">按畅销排行</option>
               <option value="views">按浏览量</option>
               <option value="price-asc">价格从低到高</option>
               <option value="price-desc">价格从高到低</option>
@@ -65,6 +88,14 @@ export default function Fabrics() {
               <button className={`px-2.5 py-2 ${view === 'list' ? 'bg-indigo-600 text-white' : 'bg-cotton text-ink-400 hover:bg-linen-200'}`} onClick={() => setView('list')}><List size={15} /></button>
             </div>
           </div>
+
+          {imgSearch && (
+            <div className="flex items-center gap-3 mb-3 rounded-lg border border-indigo-200 bg-indigo-50/50 px-3.5 py-2.5">
+              <img src={imgSearch.url} alt="search" className="w-10 h-10 rounded-lg object-cover" />
+              <div className="text-[12.5px] text-ink-600 flex-1">以图搜图：已按颜色特征相似度排序（可叠加左侧属性条件精准过滤，US-3.1.4）</div>
+              <button className="text-ink-400 hover:text-clay-500" onClick={() => setImgSearch(null)}><X size={15} /></button>
+            </div>
+          )}
 
           <div className="text-xs text-ink-400 mb-3">
             {filtered ? <>筛选出 <b className="text-ink-700">{list.length}</b> 款面料</> : <>共 {list.length} 款面料</>}

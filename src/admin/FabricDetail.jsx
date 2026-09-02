@@ -1,22 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, QrCode, Download, Pencil, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
-import { useDB, fabricStatus, priceFor } from '../store/db'
+import { ArrowLeft, QrCode, Download, Pencil, ChevronLeft, ChevronRight, ArrowRight, Sparkles, MapPin, RefreshCw, Save } from 'lucide-react'
+import { useDB, fabricStatus } from '../store/db'
 import { PageHead, Modal, Field, StatusBadge, Empty } from '../components/kit'
 import { fabricImg, weaveSwatch, qrDataUri, fmtNum, fmtMoney } from '../lib/visual'
+import { generateStory } from '../lib/ai'
 
 const TABS = ['产品故事', '工艺信息', '参数详情', '应用场景', '相似款与主配布']
 
 export default function FabricDetail() {
   const { sku } = useParams()
   const nav = useNavigate()
-  const { db, trackView, addFlow } = useDB()
+  const { db, trackView, addFlow, upsertFabric } = useDB()
   const f = db.fabrics.find((x) => x.sku === sku)
   const [tab, setTab] = useState(0)
   const [shot, setShot] = useState(0)
   const [qrOpen, setQrOpen] = useState(false)
   const [flowOpen, setFlowOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [storyAi, setStoryAi] = useState(null) // null | {text}
+  const [aiBusy, setAiBusy] = useState(false)
 
   useEffect(() => {
     setTab(0); setShot(0)
@@ -120,7 +123,11 @@ export default function FabricDetail() {
               <div>
                 <div className="text-xs text-ink-300 font-mono">{f.sku} · {f.category}{f.sub ? ` / ${f.sub}` : ''}</div>
                 <h2 className="font-display text-[24px] font-bold mt-0.5">{f.name}</h2>
-                <div className="text-xs text-ink-400 mt-1">{fmtNum(f.views)} 次浏览 · 更新于 {db.flows.find((x) => x.sku === f.sku)?.time?.slice(0, 10) || '2024-03-20'}</div>
+                <div className="text-xs text-ink-400 mt-1 flex items-center gap-2 flex-wrap">
+                  <span>{fmtNum(f.views)} 次浏览 · 更新于 {db.flows.find((x) => x.sku === f.sku)?.time?.slice(0, 10) || '2024-03-20'}</span>
+                  <span className="badge bg-linen-200 text-ink-500"><MapPin size={10} /> {f.location}</span>
+                  {f.clearance && <span className="badge bg-ink-900 text-linen-50">清仓</span>}
+                </div>
               </div>
               <div className="text-right">
                 <div className="font-display font-bold text-clay-500 text-[26px]">{fmtMoney(f.price)}<span className="text-sm text-ink-400 font-body"> / 米</span></div>
@@ -217,7 +224,35 @@ export default function FabricDetail() {
             <div className="p-6 min-h-[150px]">
               {tab === 0 && (
                 <div>
-                  <p className="text-[14px] leading-[1.9] text-ink-700">{f.story}</p>
+                  {storyAi === null ? (
+                    <>
+                      <p className="text-[14px] leading-[1.9] text-ink-700">{f.story}</p>
+                      <div className="mt-4 flex items-center gap-2">
+                        <button className="btn-clay !py-1.5" disabled={aiBusy} onClick={() => {
+                          setAiBusy(true)
+                          setTimeout(() => { setStoryAi({ text: generateStory(f) }); setAiBusy(false) }, 900)
+                        }}>
+                          <Sparkles size={13} /> {aiBusy ? 'AI 生成中…' : 'AI 生成产品故事'}
+                        </button>
+                        <span className="text-[11px] text-ink-300">基于样料属性自动生成开发背景 / 目标客群 / 设计理念（US-3.1.2），可编辑后保存</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="badge bg-clay-50 text-clay-500"><Sparkles size={10} /> AI 生成草稿 · 可编辑</span>
+                        <div className="flex gap-2">
+                          <button className="btn-ghost !py-1.5" onClick={() => { setAiBusy(true); setTimeout(() => { setStoryAi({ text: generateStory({ ...f, seedText: Math.random() }) }); setAiBusy(false) }, 700) }}>
+                            <RefreshCw size={12} /> 重新生成
+                          </button>
+                          <button className="btn-primary !py-1.5" onClick={() => { upsertFabric({ sku: f.sku, story: storyAi.text, storySource: 'AI生成' }); setStoryAi(null) }}>
+                            <Save size={12} /> 保存故事
+                          </button>
+                        </div>
+                      </div>
+                      <textarea className="input w-full font-body" rows="10" value={storyAi.text} onChange={(e) => setStoryAi({ text: e.target.value })} />
+                    </div>
+                  )}
                   <div className="mt-4 rounded-lg bg-linen-100 p-3.5">
                     <div className="text-xs font-semibold text-ink-400 mb-1">设计灵感</div>
                     <div className="text-[12.5px] text-ink-500">源自{f.styles.join('、')}风格的经典美学，每一寸面料都承载着设计师对美好生活的诠释。</div>
@@ -293,7 +328,8 @@ export default function FabricDetail() {
           <img src={qrDataUri(f.sku)} alt="qr" className="w-52 h-52 mx-auto rounded-xl border border-linen-200" />
           <div className="font-medium mt-3">{f.name}</div>
           <div className="text-xs text-ink-400 font-mono">{f.sku}</div>
-          <p className="text-[12px] text-ink-400 mt-3 leading-relaxed">客户扫描样品上的二维码，即可在小程序中打开本页电子档案：参数、效果图、场景展示与库存状态一目了然。</p>
+          <div className="text-[11.5px] text-ink-400 mt-1"><MapPin size={11} className="inline" /> 存放位置：{f.location}</div>
+          <p className="text-[12px] text-ink-400 mt-3 leading-relaxed">二维码与样料档案一一对应，张贴于实物样料，扫码即达本页（US-3.1.3）。</p>
         </div>
       </Modal>
 

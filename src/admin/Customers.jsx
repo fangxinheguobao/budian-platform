@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye } from 'lucide-react'
 import { useDB } from '../store/db'
 import { PageHead, Modal, Field, TierBadge, Empty } from '../components/kit'
 import { TIER_MAP, SALESPEOPLE } from '../data/seed'
@@ -10,6 +10,13 @@ export default function Customers() {
   const { db, upsertCustomer, removeCustomer } = useDB()
   const [editing, setEditing] = useState(null) // null | {} | customer
   const [q, setQ] = useState('')
+  const [profileId, setProfileId] = useState(null)
+
+  const pc = profileId ? db.customers.find((c) => c.id === profileId) : null
+  const pu = pc ? db.users.find((u) => u.customerId === pc.id) : null
+  const pTracks = pu ? db.tracks.filter((t) => t.userId === pu.id) : []
+  const pLeads = pc ? db.leads.filter((l) => l.customerId === pc.id) : []
+  const pProofs = pc ? db.proofs.filter((p) => p.customerId === pc.id) : []
 
   const list = db.customers.filter((c) => !q.trim() || (c.name + c.contact + c.sales).includes(q.trim()))
 
@@ -64,8 +71,9 @@ export default function Customers() {
                 <td className="td">
                   <span className={`badge ${cu.status === '活跃' ? 'bg-indigo-50 text-indigo-600' : cu.status === '休眠' ? 'bg-linen-200 text-ink-500' : 'bg-clay-100 text-clay-600'}`}>{cu.status}</span>
                 </td>
-                <td className="td text-right">
+                <td className="td">
                   <div className="flex gap-1 justify-end">
+                    <button className="btn-light !py-1.5" onClick={() => setProfileId(cu.id)}><Eye size={13} /> 画像</button>
                     <button className="btn-ghost !px-2 !py-1.5" onClick={() => setEditing({ ...cu })}><Pencil size={13} /></button>
                     <button className="btn-ghost !px-2 !py-1.5 hover:!text-clay-500" onClick={() => window.confirm(`确定删除客户「${cu.name}」？`) && removeCustomer(cu.id)}><Trash2 size={13} /></button>
                   </div>
@@ -76,6 +84,43 @@ export default function Customers() {
         </table>
         {!list.length && <Empty text="没有匹配的客户" />}
       </div>
+
+      {/* 客户画像（US-3.3.1 轨迹画像） */}
+      <Modal open={!!profileId} onClose={() => setProfileId(null)} title="客户画像 · 私域轨迹" width={620}>
+        {pc && (
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-linen-200 font-display font-bold text-lg flex items-center justify-center">{pc.name[0]}</div>
+              <div>
+                <div className="font-display font-bold text-[16px]">{pc.name} <TierBadge tier={pc.tier} /></div>
+                <div className="text-[11.5px] text-ink-400">{pc.contact} · 大区：{pu?.region || pc.region}（IP {pu?.ip || '—'}）· 注册 {pu?.registeredAt || '—'}</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2.5 mb-4">
+              {[['浏览轨迹', pTracks.filter((t) => t.action === '浏览').length], ['询价', pLeads.length], ['打样单', pProofs.length], ['分享', pTracks.filter((t) => t.action === '分享').length]].map(([k, v]) => (
+                <div key={k} className="rounded-lg bg-linen-100 px-3 py-2 text-center">
+                  <div className="text-[10.5px] text-ink-400">{k}</div>
+                  <div className="text-[13px] font-medium mt-0.5">{v}</div>
+                </div>
+              ))}
+            </div>
+            <h4 className="text-[13px] font-semibold mb-2">浏览轨迹</h4>
+            <div className="space-y-1.5 max-h-[280px] overflow-auto">
+              {pTracks.map((t) => {
+                const f = db.fabrics.find((x) => x.sku === t.sku)
+                return (
+                  <div key={t.id} className="flex items-center gap-2.5 text-[12.5px] rounded-lg border border-linen-200 px-3 py-2">
+                    <span className={`badge ${t.action === '询价' ? 'bg-clay-100 text-clay-600' : t.action === '分享' ? 'bg-indigo-50 text-indigo-600' : 'bg-linen-200 text-ink-500'}`}>{t.action}</span>
+                    <span className="font-medium">{f?.name || t.sku}</span>
+                    <span className="text-ink-300 ml-auto text-[11px]">{t.time}</span>
+                  </div>
+                )
+              })}
+              {!pTracks.length && <div className="text-xs text-ink-300 py-3 text-center">暂无轨迹记录</div>}
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <Modal open={!!editing} onClose={() => setEditing(null)} title={editing?.id ? '编辑客户' : '新建客户'} width={560}>
         {editing && (
