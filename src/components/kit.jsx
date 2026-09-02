@@ -71,7 +71,7 @@ export function FabricCard({ f, price, to, footer, showStock = true }) {
         <div className="swatch aspect-[4/3]">
           <img src={img} alt={f.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" loading="lazy" />
         </div>
-        <div className="absolute top-2.5 left-2.5"><StatusBadge f={f} /></div>
+        <div className="absolute top-2.5 left-2.5">{showStock ? <StatusBadge f={f} /> : <span className="badge bg-linen-200/90 text-ink-400">可询价</span>}</div>
         {showStock && (
           <div className="absolute bottom-2.5 right-2.5 rounded-md bg-ink-900/70 text-linen-50 text-[11px] px-2 py-0.5 backdrop-blur-sm">
             库存 {f.stock}m
