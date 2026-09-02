@@ -46,7 +46,7 @@ export default function MyProofs() {
                     <span className={`badge ${cls} !px-3 !py-1`}>{p.status}</span>
                     <div>
                       <div className="font-medium text-[14.5px]">{p.id} 打样单</div>
-                      <div className="text-[11.5px] text-ink-300">提交于 {p.date} {p.erpNo && `· ERP单号 ${p.erpNo}`}</div>
+                      <div className="text-[11.5px] text-ink-300">提交于 {p.date} {p.erpNo && `· ERP单号 ${p.erpNo}`}{p.trackingNo && ` · 📦 快递 ${p.trackingNo}`}</div>
                     </div>
                   </div>
                   <div className="text-[13px]">预估 <b className="font-display text-clay-500">{fmtMoney(total)}</b></div>

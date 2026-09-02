@@ -1,15 +1,17 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Printer, ArrowLeft } from 'lucide-react'
+import { Printer, ArrowLeft, Play, Pause, Clapperboard } from 'lucide-react'
 import { useDB, customerById, priceFor } from '../store/db'
 import { fabricImg, fmtMoney } from '../lib/visual'
+import { IMG } from '../data/seed'
 
-// 电子册在线浏览（分享页）：管理端分享给客户，支持打印导出 PDF
+// 电子册在线浏览（分享页）：故事+成品图+动态视频+企划案（US-3.2.1 多维电子画册），支持打印导出
 export default function EbookView() {
   const { id } = useParams()
   const { db, trackEbook } = useDB()
   const eb = db.ebooks.find((e) => e.id === id)
   const cu = eb ? customerById(db, eb.customerId) : null
+  const [playing, setPlaying] = useState(true)
 
   useEffect(() => { if (eb) trackEbook(eb.id) /* eslint-disable-line */ }, [id])
 
@@ -54,6 +56,40 @@ export default function EbookView() {
             </div>
           </div>
         </div>
+
+        {/* 动态场景视频（US-3.2.1：多维电子画册含动态场景视频；素材源自AI生成演示片） */}
+        <div className="card overflow-hidden mt-5 print-page">
+          <div className="relative bg-ink-900">
+            <video
+              src="img/scene-demo.mp4"
+              autoPlay={playing} loop muted playsInline
+              className="w-full block aspect-video object-cover"
+            />
+            <div className="absolute top-3 left-3 badge bg-ink-900/65 text-linen-50"><Clapperboard size={11} /> 动态场景演示</div>
+            <button
+              className="no-print absolute bottom-3 right-3 w-10 h-10 rounded-full bg-cotton/90 shadow-lift flex items-center justify-center hover:bg-cotton"
+              onClick={() => setPlaying(!playing)} title={playing ? '暂停' : '播放'}
+            >
+              {playing ? <Pause size={16} className="text-ink-900" /> : <Play size={16} className="text-ink-900" />}
+            </button>
+          </div>
+          <div className="p-4 text-[12px] text-ink-400">面料成品动态场景 —— 直观呈现垂感、光泽与空间氛围（视频由后台上传，不提供下载）</div>
+        </div>
+
+        {/* 主推产品企划案（US-3.2.1） */}
+        {eb.plan && (
+          <div className="card p-7 mt-5 print-page">
+            <div className="text-[11px] tracking-[.3em] text-ink-300">PROMOTION PLAN</div>
+            <h2 className="font-display text-[22px] font-bold mt-1">主推产品企划案</h2>
+            <p className="text-[13.5px] leading-[1.9] text-ink-600 mt-4 whitespace-pre-wrap">{eb.plan}</p>
+            <div className="flex flex-wrap gap-1.5 mt-4">
+              {eb.skus.map((s) => {
+                const f = db.fabrics.find((x) => x.sku === s)
+                return f ? <span key={s} className="badge bg-clay-50 text-clay-500">{f.name}</span> : null
+              })}
+            </div>
+          </div>
+        )}
 
         {/* 每款面料一页 */}
         {eb.skus.map((s) => {

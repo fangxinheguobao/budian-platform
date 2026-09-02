@@ -139,11 +139,18 @@ export default function Fabrics() {
 function NewFabricModal({ open, onClose, onCreate }) {
   const { db } = useDB()
   const [form, setForm] = useState({ sku: '', name: '', category: '窗帘布', price: '', gsm: '', width: 148, stock: '', safety: 150 })
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+  const [err, setErr] = useState('')
+  const set = (k) => (e) => { setErr(''); setForm((f) => ({ ...f, [k]: e.target.value })) }
   const submit = () => {
-    if (!form.sku.trim() || !form.name.trim()) return
+    const sku = form.sku.trim().toUpperCase()
+    if (!sku || !form.name.trim()) return
+    // UC-3.1.1-01 异常流程：编号全局唯一，重复时提示并阻止
+    if (db.fabrics.some((x) => x.sku === sku)) {
+      setErr(`编号已存在：「${sku}」已被「${db.fabrics.find((x) => x.sku === sku)?.name}」占用，样料编号不可复用，请更换。`)
+      return
+    }
     onCreate({
-      sku: form.sku.trim().toUpperCase(),
+      sku,
       name: form.name.trim(),
       category: form.category,
       sub: '新品',
@@ -168,6 +175,7 @@ function NewFabricModal({ open, onClose, onCreate }) {
   }
   return (
     <Modal open={open} onClose={onClose} title="新建面料">
+      {err && <div className="mb-4 rounded-lg bg-clay-50 border border-clay-200 text-clay-600 text-[12.5px] px-3.5 py-2.5">{err}</div>}
       <div className="grid grid-cols-2 gap-4">
         <Field label="SKU 编号（唯一）">
           <input className="input" placeholder={`如 ${CATEGORY_PREFIX[form.category]}-031`} value={form.sku} onChange={set('sku')} />

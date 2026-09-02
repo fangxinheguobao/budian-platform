@@ -48,6 +48,13 @@ export default function Proofs() {
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <span className={`badge ${statusCls[active.status]} !px-3 !py-1`}>{active.status}</span>
+                  {active.trackingNo && (
+                    <button className="text-[11.5px] text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2 py-1 font-mono"
+                      title="点击复制快递单号"
+                      onClick={() => { navigator.clipboard?.writeText(active.trackingNo); window.alert('快递单号已复制：' + active.trackingNo) }}>
+                      📦 {active.trackingNo}
+                    </button>
+                  )}
                   {!active.erpNo ? (
                     <button className="btn-primary !py-1.5" onClick={() => pushToErp(active.id)}>
                       <Send size={13} /> 推送ERP

@@ -13,6 +13,7 @@ import EbookEditor from './admin/EbookEditor'
 import Customers from './admin/Customers'
 import Leads from './admin/Leads'
 import Proofs from './admin/Proofs'
+import Insights from './admin/Insights'
 import AIStudio from './admin/AIStudio'
 import Reports from './admin/Reports'
 import SystemAdmin from './admin/SystemAdmin'
@@ -24,6 +25,7 @@ import ShopFabrics from './shop/Fabrics'
 import ShopFabricDetail from './shop/FabricDetail'
 import Mall from './shop/Mall'
 import MyProofs from './shop/MyProofs'
+import MyLeads from './shop/MyLeads'
 import EbookView from './shop/EbookView'
 
 function Gate({ children }) {
@@ -49,6 +51,7 @@ export default function App() {
         <Route path="ebooks/:id" element={<EbookEditor />} />
         <Route path="customers" element={<Customers />} />
         <Route path="leads" element={<Leads />} />
+        <Route path="insights" element={<Insights />} />
         <Route path="proofs" element={<Proofs />} />
         <Route path="ai-studio" element={<AIStudio />} />
         <Route path="reports" element={<Reports />} />
@@ -61,6 +64,7 @@ export default function App() {
         <Route path="fabrics/:sku" element={<ShopFabricDetail />} />
         <Route path="mall" element={<Mall />} />
         <Route path="proofs" element={<MyProofs />} />
+        <Route path="my-leads" element={<MyLeads />} />
       </Route>
       <Route path="/ebook/:id" element={<Gate><EbookView /></Gate>} />
       <Route path="*" element={<Navigate to="/" replace />} />

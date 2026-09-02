@@ -98,13 +98,18 @@ export function DBProvider({ children }) {
         })
       },
 
-      // 库存（US-3.1.3 流转）
-      addFlow({ sku, type, qty, person, note }) {
+      // 库存（US-3.1.3 流转，含借用冲突状态 UC-3.1.3-02）
+      addFlow({ sku, type, qty, person, note, until }) {
         patch((d) => {
           const f = d.fabrics.find((x) => x.sku === sku)
           if (f) {
-            if (type === '入库' || type === '归还') f.stock += qty
-            else f.stock = Math.max(0, f.stock - qty)
+            if (type === '入库' || type === '归还') {
+              f.stock += qty
+              if (type === '归还') f.borrowedBy = null
+            } else {
+              f.stock = Math.max(0, f.stock - qty)
+              if (type === '借用' || type === '转借') f.borrowedBy = { person, until: until || '7天后' }
+            }
           }
           d.flows.unshift({ id: 'F' + d.seq.flow++, sku, type, qty, person, note, time: now() })
         })
@@ -169,8 +174,11 @@ export function DBProvider({ children }) {
           const p = d.proofs.find((x) => x.id === id)
           if (!p || !p.erpNo) return
           p.progress.push({ time: now(), who: 'ERP→平台', what: `进度回传：${text}`, detail: 'ERP接口反向传送' })
-          if (text === '已寄出' || text === '已完成') p.status = '已完成'
-          else if (p.status === 'ERP已接收') p.status = '生产中'
+          if (text === '已寄出' || text === '已完成') {
+            p.status = '已完成'
+            if (!p.trackingNo) p.trackingNo = 'SF' + String(Date.now()).slice(-10)
+            p.progress.push({ time: now(), who: 'ERP→平台', what: '寄出物流信息', detail: `快递单号 ${p.trackingNo}（顺丰）` })
+          } else if (p.status === 'ERP已接收') p.status = '生产中'
         })
       },
       manualProgress(id, text) {

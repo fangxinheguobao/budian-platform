@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Scissors, MessageSquareText, Share2, ShoppingBag, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Scissors, MessageSquareText, Share2, ShoppingBag, ChevronLeft, ChevronRight, Copy, Check, Heart } from 'lucide-react'
 import { useDB, priceFor } from '../store/db'
 import { useAuth } from '../auth'
 import { fabricImg, weaveSwatch, fmtMoney } from '../lib/visual'
@@ -9,6 +9,7 @@ import { AskModal } from '../components/kit'
 
 export default function FabricDetail() {
   const { sku } = useParams()
+  const [sp] = useSearchParams()
   const nav = useNavigate()
   const { db, trackView, addTrack, addProof } = useDB()
   const { user, can, session } = useAuth()
@@ -19,6 +20,8 @@ export default function FabricDetail() {
   const [proofQty, setProofQty] = useState(10)
   const [proofNote, setProofNote] = useState('')
   const [copied, setCopied] = useState(false)
+  const [faved, setFaved] = useState(false)
+  const sharedOnce = useRef(false)
 
   const f = db.fabrics.find((x) => x.sku === sku)
   const myCustomer = db.customers.find((c) => c.id === user?.customerId)
@@ -26,9 +29,34 @@ export default function FabricDetail() {
 
   useEffect(() => {
     setShot(0)
-    if (f) { trackView(f.sku); if (session) addTrack(f.sku, '浏览', session) }
+    if (f) {
+      trackView(f.sku)
+      if (session) {
+        addTrack(f.sku, '浏览', session)
+        // 收藏状态恢复（按用户持久化）
+        try {
+          const favs = JSON.parse(localStorage.getItem('budian_v6_fav_' + user.id) || '[]')
+          setFaved(favs.includes(f.sku))
+        } catch { /* ignore */ }
+      }
+    }
+    // 分享链路追踪：带 share 参数的访问记录为「分享访问」（US-3.3.3 裂变入口）
+    if (f && sp.get('share') && !sharedOnce.current) {
+      sharedOnce.current = true
+      addTrack(f.sku, '分享访问', session)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sku])
+
+  const toggleFav = () => {
+    if (!user) return
+    let favs = []
+    try { favs = JSON.parse(localStorage.getItem('budian_v6_fav_' + user.id) || '[]') } catch { /* ignore */ }
+    const next = faved ? favs.filter((x) => x !== f.sku) : [...favs, f.sku]
+    localStorage.setItem('budian_v6_fav_' + user.id, JSON.stringify(next))
+    setFaved(!faved)
+    if (session) addTrack(f.sku, faved ? '浏览' : '收藏', session)
+  }
 
   const gallery = useMemo(() => {
     if (!f) return []
@@ -59,7 +87,7 @@ export default function FabricDetail() {
 
   const showStock = can('stock')
   const price = priceFor(f, tier)
-  const shareUrl = `${location.origin}${location.pathname}#/shop/fabrics/${f.sku}`
+  const shareUrl = `${location.origin}${location.pathname}#/shop/fabrics/${f.sku}?share=${f.sku}&by=${user?.id || ''}`
 
   const submitProof = () => {
     addProof({ customerId: user?.customerId || myCustomer?.id, items: [{ sku: f.sku, qty: proofQty }], note: proofNote })
@@ -151,6 +179,11 @@ export default function FabricDetail() {
               <button className="btn-primary" onClick={() => setAskOpen(true)}><MessageSquareText size={15} /> 询价（触发线索推送）</button>
               <button className="btn-clay" onClick={() => setProofOpen(true)}><Scissors size={15} /> 申请打样</button>
               <button className="btn-ghost" onClick={() => setShareOpen(true)}><Share2 size={15} /> 分享给客户</button>
+              <button className={`btn ${faved ? 'bg-clay-50 text-clay-500 border border-clay-200' : 'btn-ghost'}`} onClick={toggleFav}>
+                <Heart size={15} fill={faved ? 'currentColor' : 'none'} /> {faved ? '已收藏' : '收藏'}
+              </button>
+            </div>
+            <div className="grid grid-cols-1 mt-2.5">
               <button className="btn bg-linen-200 text-ink-300 cursor-not-allowed border border-linen-300" onClick={() => window.alert('交易功能一期搁置，仅保留下单入口；正式版将开放在线下单。')}>
                 <ShoppingBag size={15} /> 在线下单（二期开放）
               </button>

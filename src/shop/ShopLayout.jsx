@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Home, Layers, Store, FileText, ChevronRight, LogOut, UserRound } from 'lucide-react'
+import { Home, Layers, Store, FileText, Target, ChevronRight, LogOut, UserRound } from 'lucide-react'
 import AssistantDock from '../components/AssistantDock'
 import { useDB } from '../store/db'
 import { useAuth } from '../auth'
@@ -30,6 +30,7 @@ export default function ShopLayout() {
               { to: '/shop/fabrics', label: '面料库', icon: Layers },
               { to: '/shop/mall', label: 'B2B 商城', icon: Store },
               { to: '/shop/proofs', label: '我的打样', icon: FileText },
+              { to: '/shop/my-leads', label: '我的询价', icon: Target },
             ].map(({ to, label, icon: Icon, end }) => (
               <NavLink key={to} to={to} end={end}
                 className={({ isActive }) => `flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13.5px] font-medium transition ${isActive ? 'text-indigo-600 bg-indigo-50' : 'text-ink-500 hover:bg-linen-200/70'}`}>

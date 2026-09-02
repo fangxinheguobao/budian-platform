@@ -65,13 +65,13 @@ const c = (hex) => hex
 
 // 30款面料 —— img 为 null 时使用程序化织纹；location=区域货架（US-3.1.3），clearance=清仓（US-3.1.5）
 export const FABRICS = [
-  { sku: 'XXF-001', name: '小香风黑白肌理提花', category: '服装面料', sub: '粗花呢', price: 168, gsm: 520, width: 150, stock: 180, safety: 150, colorFam: '黑色系', colors: [c('#1c1c1e'), c('#f4f1ea'), c('#8e8e93'), c('#c9a86a')], styles: ['小香风', '复古', '意式'], scenes: ['服装', '外套'], perf: ['耐磨', '抗皱', '不起球'], img: IMG.bwJacquard, views: 4120, salesRank: 5,
+  { sku: 'XXF-001', name: '小香风黑白肌理提花', category: '服装面料', sub: '粗花呢', price: 168, gsm: 520, width: 150, stock: 180, safety: 150, colorFam: '黑色系', colors: [c('#1c1c1e'), c('#f4f1ea'), c('#8e8e93'), c('#c9a86a')], styles: ['小香风', '复古', '意式'], scenes: ['服装', '外套'], perf: ['耐磨', '抗皱', '不起球'], img: IMG.bwJacquard, views: 4120, salesRank: 5, borrowedBy: { person: '王设计', until: '2024-03-25' },
     story: '黑白交织的肌理中，藏着可可·香奈儿女士的经典美学。粗花呢的颗粒感与金线的点缀相得益彰，每一寸面料都在诉说着法式优雅的故事。它是外套的最佳拍档，也是永恒的衣橱必备。',
     craft: { process: '进口多臂提花机织造，羊毛混纺粗花呢工艺，经蒸呢定型，手感蓬松有骨感。', fastness: '4-5级', shrinkage: '≤3%', strength: '经向850N', eco: 'OEKO-TEX' } },
   { sku: 'ZS-021', name: '真丝素绉缎礼服面料', category: '服装面料', sub: '真丝', price: 280, gsm: 110, width: 114, stock: 60, safety: 150, colorFam: '白色系', colors: [c('#f6f2ea'), c('#e8ddc8'), c('#d4c5a8'), c('#7a6f5c')], styles: ['轻奢', '意式'], scenes: ['服装', '礼服'], perf: ['亲肤', '垂感好', '透气'], img: IMG.silkLight, views: 5670, salesRank: 2,
     story: '16姆米桑蚕丝，珍珠光泽含蓄温润。垂坠的缎面随身体的曲线流动，是高级定制礼服的心头好，也是红毯上最温柔的光。',
     craft: { process: '湖州桑蚕丝，缎纹组织，砂洗柔炼，光泽自然含蓄。', fastness: '4级', shrinkage: '≤5%', strength: '经向420N', eco: 'GOTS' } },
-  { sku: 'YS-013', name: '意式丝绒沙发面料', category: '沙发布', sub: '丝绒', price: 118, gsm: 400, width: 142, stock: 120, safety: 150, colorFam: '蓝色系', colors: [c('#3d5a80'), c('#293241'), c('#7d8ca3'), c('#b0c4d4')], styles: ['意式', '轻奢'], scenes: ['沙发', '客厅'], perf: ['耐磨', '垂感好', '防污'], img: IMG.blueVelvet, views: 6780, salesRank: 1,
+  { sku: 'YS-013', name: '意式丝绒沙发面料', category: '沙发布', sub: '丝绒', price: 118, gsm: 400, width: 142, stock: 120, safety: 150, colorFam: '蓝色系', colors: [c('#3d5a80'), c('#293241'), c('#7d8ca3'), c('#b0c4d4')], styles: ['意式', '轻奢'], scenes: ['沙发', '客厅'], perf: ['耐磨', '垂感好', '防污'], img: IMG.blueVelvet, views: 6780, salesRank: 1, borrowedBy: { person: '王设计', until: '2024-04-05' },
     story: '深穹蓝的天鹅绒面，随光线流转出深海般的层次。意式客厅的灵魂单品，触感如奶油般细腻，耐磨而不失华贵。',
     craft: { process: '意大利绒类工艺，经割绒整理，绒毛立体饱满，倒顺光自然。', fastness: '4-5级', shrinkage: '≤2%', strength: '经向980N', eco: 'OEKO-TEX' } },
   { sku: 'SF-022', name: '意式真皮沙发面料', category: '沙发布', sub: '科技真皮', price: 158, gsm: 580, width: 138, stock: 45, safety: 150, colorFam: '大地系', colors: [c('#6f4e37'), c('#8b6f47'), c('#a68a64'), c('#3e2f23')], styles: ['意式', '轻奢'], scenes: ['沙发', '客厅'], perf: ['耐磨', '防水', '防污'], img: null, hue: 28, sat: 24, views: 3240, salesRank: 9,
@@ -214,7 +214,7 @@ export const PROOFS = [
     ],
   },
   {
-    id: 'P003', customerId: 'C05', date: '2024-03-10', status: '已完成', erpNo: 'ERP-SY-20240310-009',
+    id: 'P003', customerId: 'C05', date: '2024-03-10', status: '已完成', erpNo: 'ERP-SY-20240310-009', trackingNo: 'SF1234567890',
     note: '新房装修，客厅卧室各打样一款',
     items: [{ sku: 'CL-006', qty: 6 }, { sku: 'CL-020', qty: 4 }],
     progress: [
@@ -247,15 +247,36 @@ export const EBOOKS = [
   { id: 'E003', name: '美式田园精选', customerId: 'C02', skus: ['MS-012', 'HL-004'], desc: '经典美式田园风格窗帘与沙发面料方案', date: '2024-03-05', views: 42, plan: '' },
 ]
 
-// 浏览轨迹（US-3.3.1 用户画像）
+// 浏览轨迹（US-3.3.1 用户画像）：浏览/收藏/分享/询价/打样/AI需求，供画像分析聚合
 export const TRACKS = [
+  // 王锦华（VIP·锦华软装）—— 意式轻奢偏好：丝绒/提花/绿蓝色系
   { id: 'T001', userId: 'U5', sku: 'YS-013', action: '浏览', time: '2024-03-28 15:02' },
-  { id: 'T002', userId: 'U5', sku: 'QS-010', action: '浏览', time: '2024-03-28 14:58' },
-  { id: 'T003', userId: 'U5', sku: 'ZK-005', action: '询价', time: '2024-03-28 14:55' },
-  { id: 'T004', userId: 'U6', sku: 'CL-006', action: '浏览', time: '2024-03-28 10:12' },
-  { id: 'T005', userId: 'U6', sku: 'CL-020', action: '分享', time: '2024-03-27 17:30' },
-  { id: 'T006', userId: 'U8', sku: 'CL-030', action: '询价', time: '2024-03-26 16:40' },
-  { id: 'T007', userId: 'U8', sku: 'CL-030', action: '浏览', time: '2024-03-26 16:38' },
+  { id: 'T002', userId: 'U5', sku: 'YS-013', action: '收藏', time: '2024-03-28 15:06' },
+  { id: 'T003', userId: 'U5', sku: 'QS-010', action: '浏览', time: '2024-03-28 14:58' },
+  { id: 'T004', userId: 'U5', sku: 'QS-010', action: '分享', time: '2024-03-28 15:10' },
+  { id: 'T005', userId: 'U5', sku: 'ZK-005', action: '询价', time: '2024-03-28 14:55' },
+  { id: 'T006', userId: 'U5', sku: 'TC-019', action: '浏览', time: '2024-03-27 16:20' },
+  { id: 'T007', userId: 'U5', sku: 'TC-019', action: '收藏', time: '2024-03-27 16:22' },
+  { id: 'T008', userId: 'U5', sku: 'CL-020', action: '浏览', time: '2024-03-26 10:02' },
+  { id: 'T009', userId: 'U5', sku: 'YS-013', action: 'AI需求', time: '2024-03-28 10:20' },
+  // 张总（一级经销商·盛世窗帘）—— 走量窗帘：北欧现代、遮光性价比
+  { id: 'T010', userId: 'U6', sku: 'CL-006', action: '浏览', time: '2024-03-28 10:12' },
+  { id: 'T011', userId: 'U6', sku: 'CL-020', action: '分享', time: '2024-03-27 17:30' },
+  { id: 'T012', userId: 'U6', sku: 'CL-030', action: '浏览', time: '2024-03-27 17:05' },
+  { id: 'T013', userId: 'U6', sku: 'ZK-005', action: '浏览', time: '2024-03-27 16:40' },
+  { id: 'T014', userId: 'U6', sku: 'CL-006', action: '询价', time: '2024-03-27 10:20' },
+  { id: 'T015', userId: 'U6', sku: 'CL-020', action: '浏览', time: '2024-03-26 15:12' },
+  // 刘芳（二级经销商·雅居布艺）—— 日式侘寂棉麻
+  { id: 'T016', userId: 'U7', sku: 'RS-011', action: '浏览', time: '2024-03-26 14:02' },
+  { id: 'T017', userId: 'U7', sku: 'RS-011', action: '收藏', time: '2024-03-26 14:08' },
+  { id: 'T018', userId: 'U7', sku: 'MB-017', action: '浏览', time: '2024-03-25 11:32' },
+  { id: 'T019', userId: 'U7', sku: 'BO-014', action: '浏览', time: '2024-03-25 11:20' },
+  { id: 'T020', userId: 'U7', sku: 'CL-025', action: '浏览', time: '2024-03-24 09:45' },
+  // 孙老板（注册客户·和家窗帘）—— 新房装修，关注遮光格纹
+  { id: 'T021', userId: 'U8', sku: 'CL-030', action: '询价', time: '2024-03-26 16:40' },
+  { id: 'T022', userId: 'U8', sku: 'CL-030', action: '浏览', time: '2024-03-26 16:38' },
+  { id: 'T023', userId: 'U8', sku: 'CL-006', action: '浏览', time: '2024-03-26 16:30' },
+  { id: 'T024', userId: 'U8', sku: 'CL-020', action: '收藏', time: '2024-03-26 16:25' },
 ]
 
 // AI协同需求（US-3.4.2 后台人工协同生成，固定场景：客厅/卧室）

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, QrCode, Download, Pencil, ChevronLeft, ChevronRight, ArrowRight, Sparkles, MapPin, RefreshCw, Save } from 'lucide-react'
+import { ArrowLeft, QrCode, Download, Pencil, ChevronLeft, ChevronRight, ArrowRight, Sparkles, MapPin, RefreshCw, Save, Trash2, UserCheck } from 'lucide-react'
 import { useDB, fabricStatus } from '../store/db'
 import { PageHead, Modal, Field, StatusBadge, Empty } from '../components/kit'
 import { fabricImg, weaveSwatch, qrDataUri, fmtNum, fmtMoney } from '../lib/visual'
@@ -11,7 +11,7 @@ const TABS = ['产品故事', '工艺信息', '参数详情', '应用场景', '�
 export default function FabricDetail() {
   const { sku } = useParams()
   const nav = useNavigate()
-  const { db, trackView, addFlow, upsertFabric } = useDB()
+  const { db, trackView, addFlow, upsertFabric, removeFabric } = useDB()
   const f = db.fabrics.find((x) => x.sku === sku)
   const [tab, setTab] = useState(0)
   const [shot, setShot] = useState(0)
@@ -74,6 +74,15 @@ export default function FabricDetail() {
           <button className="btn-ghost !py-1.5" onClick={() => setQrOpen(true)}><QrCode size={14} /> 扫码查料</button>
           <button className="btn-ghost !py-1.5" onClick={() => window.alert('演示环境：资料打包下载功能在正式版中提供（含档案PDF+图片素材）')}><Download size={14} /> 下载资料</button>
           <button className="btn-primary !py-1.5" onClick={() => setEditOpen(true)}><Pencil size={14} /> 编辑面料</button>
+          <button className="btn-ghost !py-1.5 hover:!text-clay-500" onClick={() => {
+            const referenced = db.proofs.some((p) => p.items.some((i) => i.sku === f.sku)) ||
+              db.ebooks.some((e) => e.skus.includes(f.sku)) || db.leads.some((l) => l.sku === f.sku)
+            if (referenced) { window.alert('该面料已被打样单 / 画册 / 询价线索引用，不可删除；如需下架请先将库存清零并联系管理员处理关联数据。'); return }
+            if (window.confirm(`确定删除面料「${f.name}」（${f.sku}）？删除后不可恢复。`)) {
+              removeFabric(f.sku)
+              nav('/admin/fabrics')
+            }
+          }}><Trash2 size={14} /> 删除</button>
         </div>
       </div>
 
@@ -174,6 +183,11 @@ export default function FabricDetail() {
                     <div className={`h-full rounded-full ${f.stock < f.safety ? 'bg-clay-400' : 'bg-indigo-500'}`} style={{ width: `${Math.min(100, (f.stock / (f.safety * 1.5)) * 100)}%` }} />
                   </div>
                   <div className="text-[10.5px] text-ink-300 mt-1.5">安全库存线：{f.safety} 米</div>
+                  {f.borrowedBy && (
+                    <div className="mt-2 rounded-md bg-clay-50 border border-clay-200 px-2 py-1.5 text-[10.5px] text-clay-600 flex items-center gap-1">
+                      <UserCheck size={11} /> 借出中：{f.borrowedBy.person}（{f.borrowedBy.until}归还）
+                    </div>
+                  )}
                 </div>
                 {[
                   ['本月入库', flows.filter((x) => x.type === '入库').reduce((a, b) => a + b.qty, 0) || '—'],
@@ -347,9 +361,18 @@ function defaultComp(f) {
 
 export function FlowModal({ open, onClose, f, onSubmit }) {
   const types = ['入库', '出库', '借用', '领用', '转借', '归还']
-  const [v, setV] = useState({ type: '入库', qty: 10, person: '张库管', note: '' })
-  useEffect(() => { if (open) setV({ type: '入库', qty: 10, person: '张库管', note: '' }) }, [open, f?.sku])
+  const [v, setV] = useState({ type: '入库', qty: 10, person: '张库管', note: '', until: '' })
+  useEffect(() => { if (open) setV({ type: '入库', qty: 10, person: '张库管', note: '', until: '' }) }, [open, f?.sku])
   if (!f) return null
+  const conflict = f.borrowedBy && (v.type === '借用' || v.type === '转借')
+  const trySubmit = () => {
+    // UC-3.1.3-02 转借冲突：已借出时提示当前借用信息，确认后方可继续
+    if (conflict) {
+      const ok = window.confirm(`⚠️ 该样料当前已借出给「${f.borrowedBy.person}」（预计 ${f.borrowedBy.until} 归还）。\n确认继续${v.type}吗？确认后将更新持有人为 ${v.person}。`)
+      if (!ok) return
+    }
+    onSubmit({ sku: f.sku, ...v, note: v.note || `${v.type}操作（演示）` })
+  }
   return (
     <Modal open={open} onClose={onClose} title={`库存操作 · ${f.name}`} width={480}>
       <div className="space-y-4">
@@ -363,6 +386,7 @@ export function FlowModal({ open, onClose, f, onSubmit }) {
           </div>
           <div className="text-[11px] text-ink-300 mt-1.5">
             {v.type === '入库' || v.type === '归还' ? '该操作将增加库存' : '该操作将扣减库存'} · 当前库存 {f.stock} 米
+            {f.borrowedBy && <span className="text-clay-500"> · 借出中：{f.borrowedBy.person}（{f.borrowedBy.until}归还）</span>}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -373,13 +397,18 @@ export function FlowModal({ open, onClose, f, onSubmit }) {
             <input className="input" value={v.person} onChange={(e) => setV((s) => ({ ...s, person: e.target.value }))} />
           </Field>
         </div>
+        {(v.type === '借用' || v.type === '转借') && (
+          <Field label="预计归还日期">
+            <input className="input" type="date" value={v.until} onChange={(e) => setV((s) => ({ ...s, until: e.target.value }))} />
+          </Field>
+        )}
         <Field label="备注说明">
           <textarea className="input" rows="2" placeholder="如：订单出库，客户：锦华软装" value={v.note} onChange={(e) => setV((s) => ({ ...s, note: e.target.value }))} />
         </Field>
       </div>
       <div className="flex justify-end gap-2 mt-5">
         <button className="btn-ghost" onClick={onClose}>取消</button>
-        <button className="btn-primary" onClick={() => onSubmit({ sku: f.sku, ...v, note: v.note || `${v.type}操作（演示）` })}>确认登记</button>
+        <button className="btn-primary" onClick={trySubmit}>确认登记</button>
       </div>
     </Modal>
   )

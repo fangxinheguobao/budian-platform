@@ -109,19 +109,42 @@ export function Field({ label, children }) {
   )
 }
 
-// 询价弹窗（US-3.3.2：摒弃购物车，主动询价触发高意向线索推送；需求选填降低门槛）
+// 询价弹窗（US-3.3.2：摒弃购物车，主动询价触发高意向线索推送；需求文字/图片选填）
 export function AskModal({ open, onClose, sku, tier, customer }) {
   const { db, addLead, addTrack } = useDB()
   const { session } = useAuth()
   const [qty, setQty] = useState(30)
   const [note, setNote] = useState('')
+  const [img, setImg] = useState(null)
   const [done, setDone] = useState(false)
+  const fileRef = React.useRef(null)
   const f = db.fabrics.find((x) => x.sku === sku)
-  React.useEffect(() => { if (open) { setQty(30); setNote(''); setDone(false) } }, [open, sku])
+  React.useEffect(() => { if (open) { setQty(30); setNote(''); setImg(null); setDone(false) } }, [open, sku])
   if (!open || !f) return null
   const cu = customer || db.customers.find((c) => c.id === session?.customerId)
+
+  const pickImg = (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      // 压缩到最长边 480px，避免撑爆 localStorage
+      const im = new Image()
+      im.onload = () => {
+        const MAX = 480
+        const ratio = Math.min(1, MAX / Math.max(im.width, im.height))
+        const cv = document.createElement('canvas')
+        cv.width = Math.round(im.width * ratio)
+        cv.height = Math.round(im.height * ratio)
+        cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height)
+        setImg(cv.toDataURL('image/jpeg', 0.7))
+      }
+      im.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  }
+
   const submit = () => {
-    addLead({ customerId: cu?.id || session?.customerId, sku, qty, note, source: '详情页询价', owner: cu?.sales })
+    addLead({ customerId: cu?.id || session?.customerId, sku, qty, note, img, source: '详情页询价', owner: cu?.sales })
     if (session) addTrack(sku, '询价', session)
     setDone(true)
   }
@@ -131,7 +154,7 @@ export function AskModal({ open, onClose, sku, tier, customer }) {
         <div className="text-center py-6">
           <div className="w-14 h-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-2xl">✓</div>
           <h3 className="font-display font-bold text-[17px] mt-4">询价已提交</h3>
-          <p className="text-[13px] text-ink-400 mt-2 leading-relaxed">高意向线索已实时推送至业务员（{cu?.sales || '待分配'}），<br />将与您联系并提供正式报价。</p>
+          <p className="text-[13px] text-ink-400 mt-2 leading-relaxed">高意向线索已实时推送至业务员（{cu?.sales || '待分配'}），<br />可在「我的询价」中查看跟进进度。</p>
           <button className="btn-primary mt-5" onClick={onClose}>好的</button>
         </div>
       ) : (
@@ -149,7 +172,18 @@ export function AskModal({ open, onClose, sku, tier, customer }) {
           <Field label="需求说明（选填：文字或图片）">
             <textarea className="input w-full mt-1" rows="3" placeholder="如：酒店项目用，需防火检测报告，含税含运费" value={note} onChange={(e) => setNote(e.target.value)} />
           </Field>
-          <button className="btn-ghost w-full mt-2 !py-2" onClick={() => window.alert('演示环境：图片上传在正式版中支持（需求可配图）')}>＋ 添加图片</button>
+          <div className="mt-2">
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { pickImg(e.target.files?.[0]); e.target.value = '' }} />
+            {img ? (
+              <div className="flex items-center gap-2.5 rounded-lg border border-linen-200 p-2">
+                <img src={img} alt="需求图" className="w-14 h-14 rounded-lg object-cover" />
+                <span className="text-[11.5px] text-ink-400 flex-1">已附图片（随询价单推送业务员）</span>
+                <button className="text-ink-300 hover:text-clay-500" onClick={() => setImg(null)}><X size={15} /></button>
+              </div>
+            ) : (
+              <button className="btn-ghost w-full !py-2" onClick={() => fileRef.current?.click()}>＋ 添加图片（现场照片/参考图）</button>
+            )}
+          </div>
           <button className="btn-primary w-full mt-4 !py-2.5" onClick={submit}>提交询价（触发线索推送）</button>
           <p className="text-[10.5px] text-ink-300 mt-2 text-center">摒弃购物车模式：仅在主动询价时推送线索，浏览不触发</p>
         </>

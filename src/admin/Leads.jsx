@@ -50,6 +50,11 @@ export default function Leads() {
                   </div>
                   {l.note && <div className="text-[12px] text-ink-500 mt-1">需求：{l.note}</div>}
                 </div>
+                {l.img && (
+                  <button title="点击查看客户附图" onClick={() => window.open(l.img, '_blank')}>
+                    <img src={l.img} alt="需求图" className="w-14 h-14 rounded-lg object-cover border border-linen-200" />
+                  </button>
+                )}
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                   <div className="flex gap-1.5">
                     <button className="btn-light !py-1.5" onClick={() => setProfileId(l.id)}><Eye size={13} /> 客户画像</button>

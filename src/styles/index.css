@@ -135,7 +135,7 @@ body {
   @apply relative overflow-hidden bg-linen-200;
 }
 
-/* 打印：电子册导出 */
+/* 打印：电子册导出 / 画像报告成册 */
 @media print {
   body {
     background: #fff;
@@ -145,5 +145,22 @@ body {
   }
   .print-page {
     page-break-after: always;
+  }
+  /* 画像报告：只打印 .print-area 内容（弹层中的报告） */
+  body:has(.print-area) *:not(.print-area):not(.print-area *) {
+    visibility: hidden;
+  }
+  .print-area {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area .overflow-auto {
+    max-height: none !important;
+    overflow: visible !important;
   }
 }

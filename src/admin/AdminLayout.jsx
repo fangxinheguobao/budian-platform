@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Layers, BookOpen, Users, Tags,
-  Wand2, QrCode, RotateCcw, ChevronRight, Scissors, Target, FileText, ClipboardList, Settings2, LogOut,
+  Wand2, QrCode, RotateCcw, ChevronRight, Scissors, Target, FileText, ClipboardList, Settings2, LogOut, PieChart,
 } from 'lucide-react'
 import AssistantDock from '../components/AssistantDock'
 import { useDB } from '../store/db'
@@ -18,6 +18,7 @@ const NAV = [
   { to: '/admin/ebooks', label: '电子画册', icon: BookOpen, roles: ['admin', 'sales'] },
   { to: '/admin/customers', label: '客户画像', icon: Users, roles: ['admin', 'sales'] },
   { to: '/admin/leads', label: '询价线索', icon: Target, roles: ['admin', 'sales'] },
+  { to: '/admin/insights', label: '客户画像分析', icon: PieChart, roles: ['admin', 'sales'] },
   { to: '/admin/proofs', label: '打样管理', icon: ClipboardList, roles: ['admin', 'sales'] },
   { to: '/admin/ai-studio', label: 'AI协同工作台', icon: Wand2, roles: ['admin', 'artist'] },
   { to: '/admin/reports', label: '报表中心', icon: FileText, roles: ['admin', 'sales'] },
