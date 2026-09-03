@@ -1,18 +1,41 @@
 // 布典人生 v6.0 种子数据 —— 依据《系统设计说明书》V2.0 与《系统用例》V2.0
-const P = (n) => `img/${n}`
+import a_tealDrape from '../assets/img/fabric-teal-drape.jpg'
+import a_silkLight from '../assets/img/fabric-silk-light.jpg'
+import a_bwJacquard from '../assets/img/fabric-bw-jacquard.jpg'
+import a_blueVelvet from '../assets/img/fabric-blue-velvet.jpg'
+import a_velvetSwirl from '../assets/img/fabric-velvet-swirl.jpg'
+import a_tealSilk from '../assets/img/fabric-teal-silk.jpg'
+import a_sceneCurtainSofa from '../assets/img/scene-curtain-sofa.jpg'
+import a_sceneLivingRoom from '../assets/img/scene-living-room.jpg'
+import a_sceneBeigeCurtain from '../assets/img/scene-beige-curtain.jpg'
+import a_sceneGrayCurtain from '../assets/img/scene-gray-curtain.jpg'
+import a_sceneShowroomBlue from '../assets/img/scene-showroom-blue.jpg'
 
 export const IMG = {
-  tealDrape: P('fabric-teal-drape.jpg'),
-  silkLight: P('fabric-silk-light.jpg'),
-  bwJacquard: P('fabric-bw-jacquard.jpg'),
-  blueVelvet: P('fabric-blue-velvet.jpg'),
-  velvetSwirl: P('fabric-velvet-swirl.jpg'),
-  tealSilk: P('fabric-teal-silk.jpg'),
-  sceneCurtainSofa: P('scene-curtain-sofa.jpg'),
-  sceneLivingRoom: P('scene-living-room.jpg'),
-  sceneBeigeCurtain: P('scene-beige-curtain.jpg'),
-  sceneGrayCurtain: P('scene-gray-curtain.jpg'),
-  sceneShowroomBlue: P('scene-showroom-blue.jpg'),
+  tealDrape: a_tealDrape,
+  silkLight: a_silkLight,
+  bwJacquard: a_bwJacquard,
+  blueVelvet: a_blueVelvet,
+  velvetSwirl: a_velvetSwirl,
+  tealSilk: a_tealSilk,
+  sceneCurtainSofa: a_sceneCurtainSofa,
+  sceneLivingRoom: a_sceneLivingRoom,
+  sceneBeigeCurtain: a_sceneBeigeCurtain,
+  sceneGrayCurtain: a_sceneGrayCurtain,
+  sceneShowroomBlue: a_sceneShowroomBlue,
+}
+
+import a_sceneLounge from '../assets/img/scene-lounge.jpg'
+import a_sceneShowroom from '../assets/img/scene-showroom.jpg'
+// 场景图名 → 资源（画廊运行时引用）
+export const SCENE_IMGS = {
+  'scene-curtain-sofa': a_scene-curtain-sofa,
+  'scene-living-room': a_scene-living-room,
+  'scene-gray-curtain': a_scene-gray-curtain,
+  'scene-lounge': a_scene-lounge,
+  'scene-showroom': a_scene-showroom,
+  'scene-showroom-blue': a_scene-showroom-blue,
+  'scene-beige-curtain': a_scene-beige-curtain,
 }
 
 export const CATEGORY_PREFIX = { 窗帘布: 'CL', 沙发布: 'SF', 服装面料: 'FZ', 床品面料: 'CP', 装饰面料: 'ZS' }

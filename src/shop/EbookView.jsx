@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { Printer, ArrowLeft, Play, Pause, Clapperboard } from 'lucide-react'
 import { useDB, customerById, priceFor } from '../store/db'
 import { fabricImg, fmtMoney } from '../lib/visual'
-import { IMG } from '../data/seed'
+import { IMG, SCENE_IMGS } from '../data/seed'
+import demoVideo from '../assets/img/scene-demo.mp4'
 
 // 电子册在线浏览（分享页）：故事+成品图+动态视频+企划案（US-3.2.1 多维电子画册），支持打印导出
 export default function EbookView() {
@@ -61,7 +62,7 @@ export default function EbookView() {
         <div className="card overflow-hidden mt-5 print-page">
           <div className="relative bg-ink-900">
             <video
-              src="img/scene-demo.mp4"
+              src={demoVideo}
               autoPlay={playing} loop muted playsInline
               className="w-full block aspect-video object-cover"
             />

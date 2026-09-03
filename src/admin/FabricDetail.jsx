@@ -1,3 +1,4 @@
+import { SCENE_IMGS } from '../data/seed'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, QrCode, Download, Pencil, ChevronLeft, ChevronRight, ArrowRight, Sparkles, MapPin, RefreshCw, Save, Trash2, UserCheck } from 'lucide-react'
@@ -37,7 +38,7 @@ export default function FabricDetail() {
     const seedNum = f.sku.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0)
     for (let i = 0; i < 3; i++) {
       const name = scenes[(seedNum + i * 2) % scenes.length]
-      g.push({ type: '场景效果图', src: `img/${name}.jpg` })
+      g.push({ type: '场景效果图', src: SCENE_IMGS[name] })
     }
     return g
   }, [f])

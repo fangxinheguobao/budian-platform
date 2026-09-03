@@ -128,7 +128,7 @@ export function rgb2hsl(r, g, b) {
 // 面料主色匹配（离线计算：面料图 → 主色 + 主色相，与上传图特征求距离）
 export async function fabricFeature(f) {
   const url = f.img || swatchUrl(f)
-  const img = await new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = url })
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url })
   const cv = document.createElement('canvas')
   cv.width = 48; cv.height = 48
   const ctx = cv.getContext('2d', { willReadFrequently: true })

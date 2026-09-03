@@ -42,7 +42,7 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Noto Serif SC"', 'STSong', 'SimSun', 'serif'],
+        display: ['Georgia', '"Times New Roman"', 'STSong', 'STZhongsong', 'SimSun', 'serif'],
         body: ['"PingFang SC"', '"Microsoft YaHei"', '"Helvetica Neue"', 'Arial', 'sans-serif'],
       },
       boxShadow: {

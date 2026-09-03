@@ -41,9 +41,15 @@ export const SCENES = [
 
 const loadImg = (src) => new Promise((res, rej) => {
   const im = new Image()
-  im.crossOrigin = 'anonymous'
   im.onload = () => res(im)
-  im.onerror = rej
+  // 部分托管平台对跨域模式请求不返回许可头：失败时自动回退普通加载（同源资源画布不受污染）
+  im.onerror = () => {
+    const plain = new Image()
+    plain.onload = () => res(plain)
+    plain.onerror = () => rej(new Error('IMG LOAD FAIL: ' + src))
+    plain.src = src
+  }
+  im.crossOrigin = 'anonymous'
   im.src = src
 })
 

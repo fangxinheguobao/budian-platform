@@ -4,7 +4,7 @@ import { ArrowLeft, Scissors, MessageSquareText, Share2, ShoppingBag, ChevronLef
 import { useDB, priceFor } from '../store/db'
 import { useAuth } from '../auth'
 import { fabricImg, weaveSwatch, fmtMoney } from '../lib/visual'
-import { TIER_MAP } from '../data/seed'
+import { TIER_MAP, SCENE_IMGS } from '../data/seed'
 import { AskModal } from '../components/kit'
 
 export default function FabricDetail() {
@@ -65,7 +65,7 @@ export default function FabricDetail() {
     const g = [{ type: '主图', src: f.img || weaveSwatch(f.sku, f.hue ?? 220, f.sat ?? 12) }]
     for (let i = 0; i < 3; i++) {
       const name = scenes[(seedNum + i * 2) % scenes.length]
-      g.push({ type: '场景效果图', src: `img/${name}.jpg` })
+      g.push({ type: '场景效果图', src: SCENE_IMGS[name] })
     }
     return g
   }, [f])
