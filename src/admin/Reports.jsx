@@ -1,12 +1,15 @@
 import React, { useMemo } from 'react'
 import { Download } from 'lucide-react'
 import { useDB, fabricStatus } from '../store/db'
+import { useAuth } from '../auth'
 import { PageHead } from '../components/kit'
 import { fmtNum } from '../lib/visual'
 
 // 报表中心（US-3.1.5：库存/清仓数据同步 + 多维报表）
 export default function Reports() {
   const { db } = useDB()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin' // 库存/清仓数据仅管理员可见
   const { fabrics, flows, leads, proofs } = db
 
   const byCategory = useMemo(() => {
@@ -35,14 +38,14 @@ export default function Reports() {
   return (
     <div>
       <PageHead title="报表中心" desc="库存与清仓数据同步 · 多维度决策报表（PC端）· US-3.1.5">
-        <button className="btn-ghost" onClick={() => downloadCsv('库存报表.csv', [['SKU', '名称', '品类', '库存', '安全线', '状态', '货架位置', '清仓'], ...fabrics.map((f) => [f.sku, f.name, f.category, f.stock, f.safety, fabricStatus(f).label, f.location, f.clearance ? '是' : '否'])])}>
+        {isAdmin && <button className="btn-ghost" onClick={() => downloadCsv('库存报表.csv', [['SKU', '名称', '品类', '库存', '安全线', '状态', '货架位置', '清仓'], ...fabrics.map((f) => [f.sku, f.name, f.category, f.stock, f.safety, fabricStatus(f).label, f.location, f.clearance ? '是' : '否'])])}>
           <Download size={14} /> 导出库存报表
-        </button>
+        </button>}
       </PageHead>
 
-      <div className="grid grid-cols-3 gap-5">
-        <div className="card p-5 rise-1 col-span-2">
-          <h3 className="h-panel mb-4">库存分布（按品类 · 米）</h3>
+      <div className={`grid gap-5 ${isAdmin ? 'grid-cols-3' : 'grid-cols-1'}`}>
+        <div className="card p-5 rise-1 col-span-2" style={!isAdmin ? { display: 'none' } : undefined}>
+          <h3 className="h-panel mb-4">库存分布（按品类 · 色卡张）</h3>
           <div className="space-y-3">
             {byCategory.map(([cat, stock]) => (
               <div key={cat}>
@@ -53,7 +56,7 @@ export default function Reports() {
               </div>
             ))}
           </div>
-          <h3 className="h-panel mt-7 mb-4">样料流转统计（累计米数）</h3>
+          <h3 className="h-panel mt-7 mb-4">色卡流转统计（累计张数）</h3>
           <div className="grid grid-cols-6 gap-2.5">
             {flowStats.map(([type, qty]) => (
               <div key={type} className="rounded-lg bg-linen-100 p-3 text-center">
@@ -64,7 +67,7 @@ export default function Reports() {
           </div>
         </div>
 
-        <div className="card p-5 rise-2">
+        <div className="card p-5 rise-2" style={!isAdmin ? { gridColumn: 'span 2 / span 2' } : undefined}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="h-panel">畅销排行 TOP10</h3>
             <button className="btn-ghost !py-1" onClick={() => downloadCsv('畅销排行.csv', [['排名', 'SKU', '名称', '浏览量'], ...top.map((f, i) => [i + 1, f.sku, f.name, f.views])])}><Download size={12} /></button>
@@ -84,7 +87,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="card mt-5 overflow-hidden rise-3">
+      <div className="card mt-5 overflow-hidden rise-3" style={!isAdmin ? { display: 'none' } : undefined}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-linen-200">
           <h3 className="h-panel">清仓同步清单 <span className="text-xs text-ink-300 font-body">清仓标记 + 库存紧缺自动纳入，工艺纹理属性已注入，可精准同步至清仓渠道</span></h3>
           <button className="btn-ghost !py-1.5" onClick={() => downloadCsv('清仓清单.csv', [['SKU', '名称', '库存', '克重', '门幅', '纹理', '货架位置'], ...clearance.map((f) => [f.sku, f.name, f.stock, f.gsm, f.width, f.sub, f.location])])}>
@@ -113,7 +116,7 @@ export default function Reports() {
       <div className="grid grid-cols-3 gap-5 mt-5">
         <div className="card p-5 rise-4 text-center"><div className="text-2xl font-display font-bold">{leads.length}</div><div className="text-xs text-ink-400 mt-1">累计询价线索</div></div>
         <div className="card p-5 rise-4 text-center"><div className="text-2xl font-display font-bold">{proofs.length}</div><div className="text-xs text-ink-400 mt-1">累计打样单</div></div>
-        <div className="card p-5 rise-4 text-center"><div className="text-2xl font-display font-bold">{fmtNum(fabrics.reduce((s, f) => s + f.stock, 0))}</div><div className="text-xs text-ink-400 mt-1">样料总库存（米）</div></div>
+        {isAdmin && <div className="card p-5 rise-4 text-center"><div className="text-2xl font-display font-bold">{fmtNum(fabrics.reduce((s, f) => s + f.stock, 0))}</div><div className="text-xs text-ink-400 mt-1">色卡总库存（张）</div></div>}
       </div>
     </div>
   )

@@ -171,32 +171,32 @@ export default function FabricDetail() {
             <div className="mt-6 pt-5 border-t border-linen-200">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-display font-bold">库存状态</h3>
-                <button className="btn-clay !py-1.5" onClick={() => setFlowOpen(true)}>登记出入库</button>
+                <button className="btn-clay !py-1.5" onClick={() => setFlowOpen(true)}>登记色卡流转</button>
               </div>
               <div className="grid grid-cols-5 gap-3">
                 <div className="col-span-2 rounded-lg bg-linen-100 p-3">
                   <div className="flex items-baseline gap-1.5">
                     <span className="font-display text-[22px] font-bold">{f.stock}</span>
-                    <span className="text-xs text-ink-400">米 · {st.label}</span>
+                    <span className="text-xs text-ink-400">张 · {st.label}</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-linen-200 mt-2 overflow-hidden">
                     <div className={`h-full rounded-full ${f.stock < f.safety ? 'bg-clay-400' : 'bg-indigo-500'}`} style={{ width: `${Math.min(100, (f.stock / (f.safety * 1.5)) * 100)}%` }} />
                   </div>
-                  <div className="text-[10.5px] text-ink-300 mt-1.5">安全库存线：{f.safety} 米</div>
+                  <div className="text-[10.5px] text-ink-300 mt-1.5">安全库存线：{f.safety} 张</div>
                   {f.borrowedBy && (
                     <div className="mt-2 rounded-md bg-clay-50 border border-clay-200 px-2 py-1.5 text-[10.5px] text-clay-600 flex items-center gap-1">
-                      <UserCheck size={11} /> 借出中：{f.borrowedBy.person}（{f.borrowedBy.until}归还）
+                      <UserCheck size={11} /> 色卡借出中：{f.borrowedBy.person}（{f.borrowedBy.until}归还）
                     </div>
                   )}
                 </div>
                 {[
-                  ['本月入库', flows.filter((x) => x.type === '入库').reduce((a, b) => a + b.qty, 0) || '—'],
-                  ['本月出库', flows.filter((x) => x.type === '出库').reduce((a, b) => a + b.qty, 0) || '—'],
-                  ['待归还', flows.filter((x) => x.type === '借用' || x.type === '转借').reduce((a, b) => a + b.qty, 0) || '—'],
+                  ['借出', flows.filter((x) => x.type === '借用').reduce((a, b) => a + b.qty, 0) || '—'],
+                  ['领用', flows.filter((x) => x.type === '领用').reduce((a, b) => a + b.qty, 0) || '—'],
+                  ['转借', flows.filter((x) => x.type === '转借').reduce((a, b) => a + b.qty, 0) || '—'],
                 ].map(([k, v]) => (
                   <div key={k} className="rounded-lg bg-linen-100 p-3 text-center">
                     <div className="text-[10.5px] text-ink-400">{k}</div>
-                    <div className="font-display font-bold text-[17px] mt-1">{v}<span className="text-[11px] text-ink-300 font-body"> 米</span></div>
+                    <div className="font-display font-bold text-[17px] mt-1">{v}<span className="text-[11px] text-ink-300 font-body"> 张</span></div>
                   </div>
                 ))}
               </div>
@@ -204,15 +204,15 @@ export default function FabricDetail() {
 
             {/* 流水 */}
             <div className="mt-6 pt-5 border-t border-linen-200">
-              <h3 className="font-display font-bold mb-3">出入库流水 <span className="text-xs text-ink-300 font-body">最近 {Math.min(flows.length, 5)} 条</span></h3>
+              <h3 className="font-display font-bold mb-3">色卡流转记录 <span className="text-xs text-ink-300 font-body">最近 {Math.min(flows.length, 5)} 条</span></h3>
               {flows.length ? (
                 <div className="space-y-2.5">
                   {flows.slice(0, 5).map((fl) => (
                     <div key={fl.id} className="flex items-start gap-3">
-                      <span className={`badge w-12 justify-center ${fl.type === '入库' ? 'bg-indigo-50 text-indigo-600' : fl.type === '出库' ? 'bg-linen-200 text-ink-500' : 'bg-clay-50 text-clay-500'}`}>{fl.type}</span>
+                      <span className={`badge w-12 justify-center ${fl.type === '归还' ? 'bg-indigo-50 text-indigo-600' : 'bg-clay-50 text-clay-500'}`}>{fl.type}</span>
                       <div className="min-w-0 flex-1">
                         <div className="text-[12.5px]">
-                          <b className={fl.type === '入库' ? 'text-indigo-600' : 'text-clay-500'}>{fl.type === '入库' ? '+' : '-'}{fl.qty} 米</b>
+                          <b className={fl.type === '归还' ? 'text-indigo-600' : 'text-clay-500'}>{fl.type === '归还' ? '+' : '-'}{fl.qty} 张</b>
                           <span className="text-ink-400"> · {fl.person} · {fl.time}</span>
                         </div>
                         <div className="text-[11.5px] text-ink-400 truncate">{fl.note}</div>
@@ -360,24 +360,24 @@ function defaultComp(f) {
 }
 
 export function FlowModal({ open, onClose, f, onSubmit }) {
-  const types = ['入库', '出库', '借用', '领用', '转借', '归还']
-  const [v, setV] = useState({ type: '入库', qty: 10, person: '张库管', note: '', until: '' })
-  useEffect(() => { if (open) setV({ type: '入库', qty: 10, person: '张库管', note: '', until: '' }) }, [open, f?.sku])
+  const types = ['借用', '领用', '转借', '归还']
+  const [v, setV] = useState({ type: '借用', qty: 1, person: '张库管', note: '', until: '' })
+  useEffect(() => { if (open) setV({ type: '借用', qty: 1, person: '张库管', note: '', until: '' }) }, [open, f?.sku])
   if (!f) return null
   const conflict = f.borrowedBy && (v.type === '借用' || v.type === '转借')
   const trySubmit = () => {
     // UC-3.1.3-02 转借冲突：已借出时提示当前借用信息，确认后方可继续
     if (conflict) {
-      const ok = window.confirm(`⚠️ 该样料当前已借出给「${f.borrowedBy.person}」（预计 ${f.borrowedBy.until} 归还）。\n确认继续${v.type}吗？确认后将更新持有人为 ${v.person}。`)
+      const ok = window.confirm(`⚠️ 该色卡当前已借出给「${f.borrowedBy.person}」（预计 ${f.borrowedBy.until} 归还）。\n确认继续${v.type}吗？确认后将更新持有人为 ${v.person}。`)
       if (!ok) return
     }
     onSubmit({ sku: f.sku, ...v, note: v.note || `${v.type}操作（演示）` })
   }
   return (
-    <Modal open={open} onClose={onClose} title={`库存操作 · ${f.name}`} width={480}>
+    <Modal open={open} onClose={onClose} title={`色卡流转登记 · ${f.name}`} width={480}>
       <div className="space-y-4">
         <div>
-          <label className="label">操作类型</label>
+          <label className="label">流转类型（色卡 · 张）</label>
           <div className="flex flex-wrap gap-1.5">
             {types.map((t) => (
               <button key={t} className={`chip ${v.type === t ? 'chip-on' : 'hover:border-indigo-300'}`}
@@ -385,12 +385,12 @@ export function FlowModal({ open, onClose, f, onSubmit }) {
             ))}
           </div>
           <div className="text-[11px] text-ink-300 mt-1.5">
-            {v.type === '入库' || v.type === '归还' ? '该操作将增加库存' : '该操作将扣减库存'} · 当前库存 {f.stock} 米
+            {v.type === '归还' ? '归还入账，该色卡恢复可借' : '该操作将扣减可用色卡'} · 当前可用 {f.stock} 张
             {f.borrowedBy && <span className="text-clay-500"> · 借出中：{f.borrowedBy.person}（{f.borrowedBy.until}归还）</span>}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="数量（米）">
+          <Field label="数量（张）">
             <input className="input" type="number" min="1" value={v.qty} onChange={(e) => setV((s) => ({ ...s, qty: Math.max(1, Number(e.target.value) || 1) }))} />
           </Field>
           <Field label="经手人">
@@ -403,7 +403,7 @@ export function FlowModal({ open, onClose, f, onSubmit }) {
           </Field>
         )}
         <Field label="备注说明">
-          <textarea className="input" rows="2" placeholder="如：订单出库，客户：锦华软装" value={v.note} onChange={(e) => setV((s) => ({ ...s, note: e.target.value }))} />
+          <textarea className="input" rows="2" placeholder="如：样板间展示借用 / 门店挂样领用" value={v.note} onChange={(e) => setV((s) => ({ ...s, note: e.target.value }))} />
         </Field>
       </div>
       <div className="flex justify-end gap-2 mt-5">
@@ -427,8 +427,8 @@ function EditModal({ open, onClose, f }) {
         <Field label="价格（元/米）"><input className="input" type="number" value={form.price} onChange={(e) => setForm((s) => ({ ...s, price: Number(e.target.value) || 0 }))} /></Field>
         <Field label="克重 gsm"><input className="input" type="number" value={form.gsm} onChange={(e) => setForm((s) => ({ ...s, gsm: Number(e.target.value) || 0 }))} /></Field>
         <Field label="门幅 cm"><input className="input" type="number" value={form.width} onChange={(e) => setForm((s) => ({ ...s, width: Number(e.target.value) || 0 }))} /></Field>
-        <Field label="当前库存（米）"><input className="input" type="number" value={form.stock} onChange={(e) => setForm((s) => ({ ...s, stock: Number(e.target.value) || 0 }))} /></Field>
-        <Field label="安全库存线（米）"><input className="input" type="number" value={form.safety} onChange={(e) => setForm((s) => ({ ...s, safety: Number(e.target.value) || 0 }))} /></Field>
+        <Field label="当前色卡（张）"><input className="input" type="number" value={form.stock} onChange={(e) => setForm((s) => ({ ...s, stock: Number(e.target.value) || 0 }))} /></Field>
+        <Field label="安全库存线（张）"><input className="input" type="number" value={form.safety} onChange={(e) => setForm((s) => ({ ...s, safety: Number(e.target.value) || 0 }))} /></Field>
       </div>
       <Field label="产品故事">
         <textarea className="input" rows="3" value={form.story} onChange={set('story')} />

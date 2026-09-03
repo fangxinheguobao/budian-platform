@@ -120,7 +120,7 @@ export default function Fabrics() {
                   </div>
                   <div className="text-[12.5px] text-ink-500 w-32">{f.gsm}gsm · {f.width}cm</div>
                   <div className="text-[12.5px] w-20">¥{f.price}/米</div>
-                  <div className="text-[12.5px] text-ink-500 w-20">库存 {f.stock}m</div>
+                  <div className="text-[12.5px] text-ink-500 w-20">色卡 {f.stock}张</div>
                   <div className="flex-1 flex gap-1 justify-end">
                     {f.styles.slice(0, 3).map((t) => <span key={t} className="badge bg-linen-200/80 text-ink-500">{t}</span>)}
                   </div>
@@ -195,10 +195,10 @@ function NewFabricModal({ open, onClose, onCreate }) {
         <Field label="门幅 cm">
           <input className="input" type="number" value={form.width} onChange={set('width')} />
         </Field>
-        <Field label="初始库存（米）">
+        <Field label="初始色卡（张）">
           <input className="input" type="number" value={form.stock} onChange={set('stock')} />
         </Field>
-        <Field label="安全库存线（米）">
+        <Field label="安全库存线（张）">
           <input className="input" type="number" value={form.safety} onChange={set('safety')} />
         </Field>
       </div>

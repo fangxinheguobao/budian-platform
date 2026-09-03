@@ -11,7 +11,7 @@ export default function SystemAdmin() {
   const cfg = db.aiConfig
   const allScenes = ['客厅', '卧室', '书房', '餐厅']
   const roleKeys = [
-    ['stock', '库存可见'],
+    ['stock', '仓库查看'],
     ['aiGen', 'AI生成'],
     ['leadPush', '询价推送'],
     ['pricing', '定价管理'],

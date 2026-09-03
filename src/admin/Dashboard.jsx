@@ -24,6 +24,7 @@ export default function Dashboard() {
   const { fabrics, customers, ebooks, proofs, leads, flows, aiRequests } = db
 
   const alerts = fabrics.filter((f) => f.stock < f.safety).sort((a, b) => a.stock / a.safety - b.stock / b.safety)
+  const isAdmin = user?.role === 'admin' // 色卡仓库仅管理员可见（US-3.1.3 权限隔离）
   const pendingProofs = proofs.filter((r) => r.status !== '已完成')
   const pendingLeads = leads.filter((l) => l.status === '待跟进')
   const pendingAi = aiRequests.filter((a) => a.status === '待处理')
@@ -33,13 +34,13 @@ export default function Dashboard() {
     <div>
       <PageHeadTitle name={user?.name} />
 
-      <div className="grid grid-cols-6 gap-4 mb-6">
+      <div className={`grid gap-4 mb-6 ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
         <Kpi icon={Layers} label="面料总数" value={fabrics.length} to="/admin/fabrics" accent="rise-1" />
         <Kpi icon={Users} label="客户总数" value={customers.length} to="/admin/customers" accent="rise-1" />
         <Kpi icon={FileText} label="电子画册" value={ebooks.length} to="/admin/ebooks" accent="rise-2" />
         <Kpi icon={Target} label="待跟进线索" value={pendingLeads.length} to="/admin/leads" accent="rise-2" />
         <Kpi icon={ClipboardList} label="进行中打样" value={pendingProofs.length} to="/admin/proofs" accent="rise-3" />
-        <Kpi icon={AlertTriangle} label="库存预警" value={alerts.length} to="/admin/inventory" accent="rise-3" />
+        {isAdmin && <Kpi icon={AlertTriangle} label="色卡预警" value={alerts.length} to="/admin/inventory" accent="rise-3" />}
       </div>
 
       {pendingAi.length > 0 && (
@@ -79,12 +80,12 @@ export default function Dashboard() {
           <div className="space-y-3.5 max-h-[430px] overflow-auto pr-1">
             {flows.slice(0, 8).map((fl) => {
               const f = fabrics.find((x) => x.sku === fl.sku)
-              const typeCls = { 入库: 'bg-indigo-50 text-indigo-600', 出库: 'bg-linen-200 text-ink-500', 借用: 'bg-clay-50 text-clay-500', 领用: 'bg-clay-100 text-clay-600', 转借: 'bg-indigo-50 text-indigo-500', 归还: 'bg-indigo-100 text-indigo-700' }[fl.type] || 'bg-linen-200 text-ink-500'
+              const typeCls = { 借用: 'bg-clay-50 text-clay-500', 领用: 'bg-clay-100 text-clay-600', 转借: 'bg-indigo-50 text-indigo-500', 归还: 'bg-indigo-100 text-indigo-700' }[fl.type] || 'bg-linen-200 text-ink-500'
               return (
                 <div key={fl.id} className="flex gap-2.5">
                   <span className={`badge ${typeCls} h-fit shrink-0`}>{fl.type}</span>
                   <div className="min-w-0">
-                    <div className="text-[12.5px] text-ink-700 leading-snug">{fl.sku} {f?.name} · <b>{fl.type === '入库' || fl.type === '归还' ? '+' : '-'}{fl.qty}</b> 米</div>
+                    <div className="text-[12.5px] text-ink-700 leading-snug">{fl.sku} {f?.name} · <b>{fl.type === '归还' ? '+' : '-'}{fl.qty}</b> 张</div>
                     <div className="text-[11px] text-ink-300 mt-0.5">{fl.person} · {fl.time}</div>
                   </div>
                 </div>
@@ -94,10 +95,10 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-5">
-          <div className="card p-5 rise-3">
+          <div className="card p-5 rise-3" style={!isAdmin ? { display: 'none' } : undefined}>
             <div className="flex items-center justify-between mb-3.5">
-              <div className="h-panel flex items-center gap-2 text-[15px]"><AlertTriangle size={16} className="text-clay-500" /> 库存预警</div>
-              <Link to="/admin/inventory" className="text-xs text-indigo-500 hover:underline flex items-center gap-0.5">库存操作 <ArrowRight size={12} /></Link>
+              <div className="h-panel flex items-center gap-2 text-[15px]"><AlertTriangle size={16} className="text-clay-500" /> 色卡预警</div>
+              {isAdmin && <Link to="/admin/inventory" className="text-xs text-indigo-500 hover:underline flex items-center gap-0.5">色卡台账 <ArrowRight size={12} /></Link>}
             </div>
             <div className="space-y-2.5">
               {alerts.slice(0, 4).map((f) => (
@@ -108,7 +109,7 @@ export default function Dashboard() {
                       <div className="h-full bg-clay-400 rounded-full" style={{ width: `${Math.min(100, (f.stock / f.safety) * 100)}%` }} />
                     </div>
                   </div>
-                  <span className="text-[12px] font-medium text-clay-500 w-12 text-right">{f.stock}m</span>
+                  <span className="text-[12px] font-medium text-clay-500 w-12 text-right">{f.stock}张</span>
                 </Link>
               ))}
               {!alerts.length && <div className="text-xs text-ink-300 py-3 text-center">库存状态良好，无预警</div>}

@@ -41,14 +41,14 @@ export const TIER_MAP = {
   l2: { label: '二级经销商', priceTier: 'C类经销价', discount: 0.92, role: 'dealer_l2' },
   normal: { label: '普通客户', priceTier: '标准价', discount: 1, role: 'registered' },
 }
-// 权限矩阵（US-3.5.1 / UC-3.3.3：库存对游客与注册客户隐藏，仅VIP/分销商/授权人员可见）
+// 权限矩阵（US-3.5.1 / 仓库色卡库存仅管理员可见可操作，US-3.3.3 商城端不展示库存）
 export const PERMISSIONS = {
   admin: { stock: true, aiGen: true, leadPush: true, pricing: true, label: '授权人员' },
-  artist: { stock: true, aiGen: true, leadPush: false, pricing: false, label: '授权人员' },
-  sales: { stock: true, aiGen: true, leadPush: true, pricing: false, label: '授权人员' },
-  vip: { stock: true, aiGen: true, leadPush: true, pricing: false, label: 'VIP' },
-  dealer_l1: { stock: true, aiGen: true, leadPush: true, pricing: false, label: '分销商' },
-  dealer_l2: { stock: true, aiGen: true, leadPush: true, pricing: false, label: '分销商' },
+  artist: { stock: false, aiGen: true, leadPush: false, pricing: false, label: '授权人员' },
+  sales: { stock: false, aiGen: true, leadPush: true, pricing: false, label: '授权人员' },
+  vip: { stock: false, aiGen: true, leadPush: true, pricing: false, label: 'VIP' },
+  dealer_l1: { stock: false, aiGen: true, leadPush: true, pricing: false, label: '分销商' },
+  dealer_l2: { stock: false, aiGen: true, leadPush: true, pricing: false, label: '分销商' },
   registered: { stock: false, aiGen: false, leadPush: true, pricing: false, label: '注册客户' },
 }
 // IP 大区映射（US-3.3.1 演示）
@@ -158,8 +158,11 @@ export const FABRICS = [
 ]
 
 // 区域货架（US-3.1.3：按风格/类别/区域划分存放）
+// 仓库管理对象为色卡（张），非面料实物：数量级缩放 + 统一安全线（本期无采购入库）
 const AREAS = ['A', 'B', 'C', 'D', 'E']
 FABRICS.forEach((f, i) => {
+  f.stock = Math.max(3, Math.round(f.stock / 10))
+  f.safety = 15
   f.location = `${AREAS[i % 5]}区-${f.category.slice(0, 1)}排-${String(Math.floor(i / 5) + 1).padStart(2, '0')}号货架`
 })
 
@@ -226,18 +229,18 @@ export const PROOFS = [
   },
 ]
 
-// 库存流水（US-3.1.3）
+// 色卡流转（US-3.1.3：本期无采购入库/销售出库，仅 色卡借用/领用/转借/归还，单位：张）
 export const FLOWS = [
-  { id: 'F001', sku: 'CL-006', type: '入库', qty: 200, person: '张库管', time: '2024-03-28 14:30', note: '季度采购入库，来源：浙江绍兴织造厂' },
-  { id: 'F002', sku: 'YS-013', type: '借用', qty: 5, person: '王设计', time: '2024-03-28 09:45', note: '设计部样板间展示借用，预计4月5日归还' },
-  { id: 'F003', sku: 'SF-007', type: '出库', qty: 80, person: '张库管', time: '2024-03-27 14:10', note: '订单出库至生产部' },
-  { id: 'F004', sku: 'CP-018', type: '领用', qty: 10, person: '李销售', time: '2024-03-26 15:20', note: '销售部样品领用' },
-  { id: 'F005', sku: 'XXF-001', type: '入库', qty: 200, person: '张库管', time: '2024-03-20 10:30', note: '季度采购入库，来源：江苏苏州织造厂' },
-  { id: 'F006', sku: 'XXF-001', type: '出库', qty: 30, person: '李销售', time: '2024-03-18 14:20', note: '订单出库，客户：锦华软装' },
-  { id: 'F007', sku: 'XXF-001', type: '借用', qty: 5, person: '王设计', time: '2024-03-15 09:10', note: '样板间展示借用，预计3月25日归还' },
-  { id: 'F008', sku: 'XXF-001', type: '领用', qty: 2, person: '品控部', time: '2024-03-12 16:00', note: '质检留样领用' },
-  { id: 'F009', sku: 'XXF-001', type: '转借', qty: 10, person: '李销售', time: '2024-03-10 11:30', note: '转借至：杭州分公司展示厅' },
-  { id: 'F010', sku: 'ZS-021', type: '出库', qty: 20, person: '陈经理', time: '2024-03-09 10:00', note: '云裳高级定制订单出库' },
+  { id: 'F001', sku: 'QS-010', type: '借用', qty: 1, person: '陈经理', time: '2024-03-28 16:10', note: '展会现场展示借用，预计4月2日归还' },
+  { id: 'F002', sku: 'YS-013', type: '借用', qty: 2, person: '王设计', time: '2024-03-28 09:45', note: '设计部样板间展示借用，预计4月5日归还' },
+  { id: 'F003', sku: 'XXF-001', type: '借用', qty: 2, person: '王设计', time: '2024-03-20 15:30', note: '样板间展示借用，预计3月25日归还' },
+  { id: 'F004', sku: 'CL-006', type: '领用', qty: 1, person: '周业务', time: '2024-03-27 11:00', note: '门店挂样领用' },
+  { id: 'F005', sku: 'CP-018', type: '领用', qty: 2, person: '李销售', time: '2024-03-26 15:20', note: '销售部客户拜访领用' },
+  { id: 'F006', sku: 'XXF-001', type: '转借', qty: 1, person: '李销售', time: '2024-03-25 11:30', note: '转借至：杭州分公司展示厅' },
+  { id: 'F007', sku: 'ZS-021', type: '归还', qty: 1, person: '陈经理', time: '2024-03-24 10:00', note: '云裳高级定制看样归还' },
+  { id: 'F008', sku: 'SF-007', type: '借用', qty: 1, person: '王设计', time: '2024-03-22 14:00', note: '新品测试借用，预计3月30日归还' },
+  { id: 'F009', sku: 'RS-011', type: '借用', qty: 1, person: '刘芳', time: '2024-03-20 09:30', note: '雅居布艺门店陈列借用，预计4月8日归还' },
+  { id: 'F010', sku: 'TC-019', type: '领用', qty: 1, person: '品控部', time: '2024-03-18 16:00', note: '质检留样领用' },
 ]
 
 // 电子册（US-3.2.1 多维电子画册：故事+成品图+视频位+企划案）

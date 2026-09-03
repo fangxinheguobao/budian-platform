@@ -143,13 +143,11 @@ export default function FabricDetail() {
 
             {showStock ? (
               <div className="mt-4 rounded-lg bg-linen-100 px-4 py-2.5 text-[12.5px] text-ink-500 flex items-center justify-between">
-                <span>当前库存：<b className="text-ink-700">{f.stock} 米</b>（安全线 {f.safety} 米）</span>
+                <span>可借色卡：<b className="text-ink-700">{f.stock} 张</b>（色卡仅内部管理，与面料售价无关）</span>
                 {f.clearance && <span className="badge bg-ink-900 text-linen-50">清仓特价</span>}
               </div>
             ) : (
-              <div className="mt-4 rounded-lg bg-linen-100 px-4 py-2.5 text-[12.5px] text-ink-400 flex items-center gap-2">
-                <span>库存与现货数据对非授权角色隐藏（商业机密保护，US-3.3.3）</span>
-              </div>
+              f.clearance && <div className="mt-4"><span className="badge bg-ink-900 text-linen-50">清仓特价</span></div>
             )}
 
             <div className="grid grid-cols-3 gap-3 mt-4">

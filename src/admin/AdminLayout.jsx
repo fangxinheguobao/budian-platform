@@ -14,7 +14,7 @@ import { ROLES } from '../data/seed'
 const NAV = [
   { to: '/admin', label: '工作台', icon: LayoutDashboard, end: true, roles: ['admin', 'sales', 'artist'] },
   { to: '/admin/fabrics', label: '面料库', icon: Layers, roles: ['admin', 'sales'] },
-  { to: '/admin/inventory', label: '样料库存', icon: Scissors, roles: ['admin', 'sales'] },
+  { to: '/admin/inventory', label: '色卡台账', icon: Scissors, roles: ['admin'] },
   { to: '/admin/ebooks', label: '电子画册', icon: BookOpen, roles: ['admin', 'sales'] },
   { to: '/admin/customers', label: '客户画像', icon: Users, roles: ['admin', 'sales'] },
   { to: '/admin/leads', label: '询价线索', icon: Target, roles: ['admin', 'sales'] },

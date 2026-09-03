@@ -98,14 +98,14 @@ export function DBProvider({ children }) {
         })
       },
 
-      // 库存（US-3.1.3 流转，含借用冲突状态 UC-3.1.3-02）
+      // 色卡流转（US-3.1.3：本期无采购入库/销售出库，仅 借用/领用/转借/归还，单位：张）
       addFlow({ sku, type, qty, person, note, until }) {
         patch((d) => {
           const f = d.fabrics.find((x) => x.sku === sku)
           if (f) {
-            if (type === '入库' || type === '归还') {
+            if (type === '归还') {
               f.stock += qty
-              if (type === '归还') f.borrowedBy = null
+              f.borrowedBy = null
             } else {
               f.stock = Math.max(0, f.stock - qty)
               if (type === '借用' || type === '转借') f.borrowedBy = { person, until: until || '7天后' }
